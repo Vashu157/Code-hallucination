@@ -1,0 +1,224 @@
+{
+  "timestamp": "2026-05-06T20:00:52.542094Z",
+  "records_tested": 20,
+  "bugs_injected": 20,
+  "bugs_caught": 16,
+  "bugs_missed": 4,
+  "pipeline_errors": 0,
+  "catch_rate_pct": 80.0,
+  "catch_rate_by_mutation": {
+    "undefined_call": {
+      "caught": 5,
+      "missed": 0
+    },
+    "variable_rename": {
+      "caught": 6,
+      "missed": 0
+    },
+    "loop_boundary_shift": {
+      "caught": 2,
+      "missed": 1
+    },
+    "return_value_corrupt": {
+      "caught": 3,
+      "missed": 3
+    }
+  },
+  "per_record_results": [
+    {
+      "task_id": 11,
+      "mutation_strategy": "undefined_call",
+      "hallucinations_found": 2,
+      "breakdown": {
+        "External Source Hallucination (ESH)": 1,
+        "Logical Failure Hallucination (LFH)": 1
+      },
+      "bug_caught": true,
+      "pipeline_errors_this_run": 0
+    },
+    {
+      "task_id": 12,
+      "mutation_strategy": "variable_rename",
+      "hallucinations_found": 1,
+      "breakdown": {
+        "Logical Failure Hallucination (LFH)": 1
+      },
+      "bug_caught": true,
+      "pipeline_errors_this_run": 0
+    },
+    {
+      "task_id": 13,
+      "mutation_strategy": "loop_boundary_shift",
+      "hallucinations_found": 1,
+      "breakdown": {
+        "Logical Failure Hallucination (LFH)": 1
+      },
+      "bug_caught": true,
+      "pipeline_errors_this_run": 0
+    },
+    {
+      "task_id": 14,
+      "mutation_strategy": "variable_rename",
+      "hallucinations_found": 1,
+      "breakdown": {
+        "Logical Failure Hallucination (LFH)": 1
+      },
+      "bug_caught": true,
+      "pipeline_errors_this_run": 0
+    },
+    {
+      "task_id": 15,
+      "mutation_strategy": "undefined_call",
+      "hallucinations_found": 2,
+      "breakdown": {
+        "External Source Hallucination (ESH)": 1,
+        "Logical Failure Hallucination (LFH)": 1
+      },
+      "bug_caught": true,
+      "pipeline_errors_this_run": 0
+    },
+    {
+      "task_id": 16,
+      "mutation_strategy": "return_value_corrupt",
+      "hallucinations_found": 1,
+      "breakdown": {
+        "Logical Failure Hallucination (LFH)": 1
+      },
+      "bug_caught": true,
+      "pipeline_errors_this_run": 0
+    },
+    {
+      "task_id": 17,
+      "mutation_strategy": "return_value_corrupt",
+      "hallucinations_found": 1,
+      "breakdown": {
+        "Logical Failure Hallucination (LFH)": 1
+      },
+      "bug_caught": true,
+      "pipeline_errors_this_run": 0
+    },
+    {
+      "task_id": 18,
+      "mutation_strategy": "variable_rename",
+      "hallucinations_found": 1,
+      "breakdown": {
+        "Logical Failure Hallucination (LFH)": 1
+      },
+      "bug_caught": true,
+      "pipeline_errors_this_run": 0
+    },
+    {
+      "task_id": 19,
+      "mutation_strategy": "variable_rename",
+      "hallucinations_found": 1,
+      "breakdown": {
+        "Logical Failure Hallucination (LFH)": 1
+      },
+      "bug_caught": true,
+      "pipeline_errors_this_run": 0
+    },
+    {
+      "task_id": 20,
+      "mutation_strategy": "variable_rename",
+      "hallucinations_found": 2,
+      "breakdown": {
+        "Identity Hallucination (IH)": 1,
+        "Logical Failure Hallucination (LFH)": 1
+      },
+      "bug_caught": true,
+      "pipeline_errors_this_run": 0
+    },
+    {
+      "task_id": 21,
+      "mutation_strategy": "return_value_corrupt",
+      "hallucinations_found": 1,
+      "breakdown": {
+        "Logical Failure Hallucination (LFH)": 1
+      },
+      "bug_caught": true,
+      "pipeline_errors_this_run": 0
+    },
+    {
+      "task_id": 22,
+      "mutation_strategy": "loop_boundary_shift",
+      "hallucinations_found": 1,
+      "breakdown": {
+        "Logical Failure Hallucination (LFH)": 1
+      },
+      "bug_caught": true,
+      "pipeline_errors_this_run": 0
+    },
+    {
+      "task_id": 23,
+      "mutation_strategy": "undefined_call",
+      "hallucinations_found": 1,
+      "breakdown": {
+        "External Source Hallucination (ESH)": 1
+      },
+      "bug_caught": true,
+      "pipeline_errors_this_run": 1
+    },
+    {
+      "task_id": 24,
+      "mutation_strategy": "undefined_call",
+      "hallucinations_found": 1,
+      "breakdown": {
+        "External Source Hallucination (ESH)": 1
+      },
+      "bug_caught": true,
+      "pipeline_errors_this_run": 1
+    },
+    {
+      "task_id": 25,
+      "mutation_strategy": "return_value_corrupt",
+      "hallucinations_found": 0,
+      "breakdown": {},
+      "bug_caught": false,
+      "pipeline_errors_this_run": 1
+    },
+    {
+      "task_id": 26,
+      "mutation_strategy": "loop_boundary_shift",
+      "hallucinations_found": 0,
+      "breakdown": {},
+      "bug_caught": false,
+      "pipeline_errors_this_run": 1
+    },
+    {
+      "task_id": 27,
+      "mutation_strategy": "variable_rename",
+      "hallucinations_found": 1,
+      "breakdown": {
+        "Identity Hallucination (IH)": 1
+      },
+      "bug_caught": true,
+      "pipeline_errors_this_run": 1
+    },
+    {
+      "task_id": 28,
+      "mutation_strategy": "undefined_call",
+      "hallucinations_found": 1,
+      "breakdown": {
+        "External Source Hallucination (ESH)": 1
+      },
+      "bug_caught": true,
+      "pipeline_errors_this_run": 1
+    },
+    {
+      "task_id": 29,
+      "mutation_strategy": "return_value_corrupt",
+      "hallucinations_found": 0,
+      "breakdown": {},
+      "bug_caught": false,
+      "pipeline_errors_this_run": 1
+    },
+    {
+      "task_id": 30,
+      "mutation_strategy": "return_value_corrupt",
+      "hallucinations_found": 0,
+      "breakdown": {},
+      "bug_caught": false,
+      "pipeline_errors_this_run": 1
+    }
+  ]
+}
