@@ -1,42 +1,60 @@
 """
 SDHD_Pipeline: Static + Dynamic Hallucination Detection Pipeline
 ================================================================
-Orchestrates the full end-to-end hallucination detection workflow:
-  1. Static analysis via StaticDetector (SSA-based)
-  2. LLM-generated test cases via Gemini (black-box ECP/BVA testing)
-  3. Dynamic execution via execute_dynamic_tests (safe subprocess sandbox)
-  4. Deduplication and final JSON summary report
+Orchestrates the full end-to-end hallucination detection workflow per Paper Algorithms 1-3:
+  1. Static analysis via StaticDetector (SSA + CFG-based for 6 static types: DCH, SAH, IH, ESH, PCH, CBH)
+  2. Algorithm 3 Dynamic Detection Pipeline:
+     - Step 1: Requirement Analysis (extracts function signature, boundary conditions, exceptions)
+     - Step 2: Test Case Generation via ECP / BVA
+     - Step 3: Coverage Gate evaluation (Coverage >= C_min)
+     - Step 4: Sandboxed Dynamic Execution
+     - Step 5: Iterative Refinement Feedback Loop (up to I_max iterations)
+  3. Deduplication and final structured JSON summary report
 """
 
 import json
 import re
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Callable
 
 from static_analysis import detect_hallucinations
-from test_case_generator import generate_test_cases
+from test_case_generator import (
+    extract_requirements,
+    generate_test_cases_from_requirements,
+    generate_feedback,
+    generate_test_cases
+)
 from dynamic_executor import execute_dynamic_tests
 
 
 class SDHD_Pipeline:
     """
     Static-Dynamic Hallucination Detection (SDHD) Pipeline.
-    Integrates static SSA-based analysis and dynamic LLM-driven execution testing
-    to produce a comprehensive hallucination detection report.
+    Implements Algorithm 3 refinement loop and full static hallucination detection.
     """
 
-    def __init__(self, timeout: int = 5, max_retries: int = 3, retry_delay: float = 15.0) -> None:
+    def __init__(
+        self,
+        timeout: int = 5,
+        max_retries: int = 3,
+        retry_delay: float = 15.0,
+        c_min: int = 10,
+        i_max: int = 3
+    ) -> None:
         """
         Args:
             timeout:     Seconds before a dynamic test execution is killed (TimeoutError).
-            max_retries: How many times to retry the LLM if it fails to produce 10 tests.
-            retry_delay: Base delay in seconds between LLM retries. Doubles on each attempt
-                         (exponential backoff). Overridden by Retry-After hint from the API.
+            max_retries: Retries for API transient/network errors.
+            retry_delay: Delay in seconds between API retries.
+            c_min:       Coverage threshold (minimum test cases required, default 10).
+            i_max:       Maximum refinement iterations before exhaustion (default 3).
         """
         self.timeout = timeout
         self.max_retries = max_retries
         self.retry_delay = retry_delay
+        self.c_min = c_min
+        self.i_max = i_max
 
     # ------------------------------------------------------------------
     # Step 1 – Static Analysis
@@ -54,111 +72,134 @@ class SDHD_Pipeline:
                 "error_type": err.get("error_type", "Unknown"),
                 "variable_name": err.get("variable_name", "unknown"),
                 "line_number": err.get("line_number"),
-                "detail": None,
+                "detail": err.get("detail"),
             })
         return normalized
 
     # ------------------------------------------------------------------
-    # Step 2 – Test Case Generation (with retry)
+    # Step 2 – Dynamic Execution Stage (Algorithm 3)
     # ------------------------------------------------------------------
-    def _generate_test_cases(self, user_prompt: str, generated_code: str) -> List[Dict[str, Any]]:
+    def _run_dynamic_pipeline(
+        self,
+        user_prompt: str,
+        generated_code: str,
+        test_gen_fn: Optional[Callable] = None
+    ) -> Dict[str, Any]:
         """
-        Calls the Gemini API to produce black-box test cases.
-        Retries up to `max_retries` times with exponential backoff.
-        Automatically honours the Retry-After delay from 429 responses.
+        Executes Algorithm 3:
+        1. Requirement Extraction
+        2. Iterative loop up to I_max with coverage gate C_min & feedback refinement
         """
-        last_exception: Optional[Exception] = None
-        delay = self.retry_delay
+        requirements = extract_requirements(user_prompt, generated_code)
+        feedback: Optional[str] = None
+        last_test_cases: List[Dict[str, Any]] = []
+        last_dynamic_hallucinations: List[Dict[str, Any]] = []
+        iterations_run = 0
 
-        for attempt in range(1, self.max_retries + 1):
-            try:
-                tests = generate_test_cases(user_prompt, generated_code)
-                return tests
-            except Exception as e:
-                last_exception = e
-                error_msg = str(e)
+        for iteration in range(1, self.i_max + 1):
+            iterations_run = iteration
+            print(f"[SDHD] Dynamic Pipeline: Iteration {iteration}/{self.i_max}")
 
-                # Parse retry-after seconds from the 429 error message if present
-                wait = delay
-                retry_match = re.search(r'retry[_\s]?in[\s:]+(\d+(?:\.\d+)?)\s*s', error_msg, re.IGNORECASE)
-                if retry_match:
-                    wait = float(retry_match.group(1)) + 2.0  # add a small buffer
+            # Generate test cases (with retry for network)
+            test_cases: List[Dict[str, Any]] = []
+            delay = self.retry_delay
 
-                if attempt < self.max_retries:
-                    print(f"[SDHD] Test generation attempt {attempt}/{self.max_retries} failed. "
-                          f"Retrying in {wait:.1f}s... ({type(e).__name__})")
-                    time.sleep(wait)
-                    delay = min(delay * 2, 120.0)  # exponential backoff, cap at 2 min
-                else:
-                    print(f"[SDHD] Test generation attempt {attempt}/{self.max_retries} failed: {e}")
+            for attempt in range(1, self.max_retries + 1):
+                try:
+                    if test_gen_fn is not None:
+                        test_cases = test_gen_fn(requirements, generated_code, feedback, self.c_min)
+                    else:
+                        test_cases = generate_test_cases_from_requirements(
+                            requirements, generated_code, feedback=feedback, count=self.c_min
+                        )
+                    break
+                except Exception as e:
+                    if attempt < self.max_retries:
+                        time.sleep(min(delay, 10.0))
+                        delay *= 2
+                    else:
+                        print(f"[SDHD] Test generation error on iteration {iteration}: {e}")
 
-        raise RuntimeError(
-            f"Test case generation failed after {self.max_retries} retries. "
-            f"Last error: {last_exception}"
-        )
+            last_test_cases = test_cases
+            coverage = len(test_cases)
 
-    # ------------------------------------------------------------------
-    # Step 3 – Dynamic Execution
-    # ------------------------------------------------------------------
-    def _run_dynamic_analysis(
-        self, generated_code: str, test_cases: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        """
-        Executes the generated code against all test cases in a sandboxed process.
-        Returns a normalized list of dynamic hallucination records.
-        """
-        report = execute_dynamic_tests(generated_code, test_cases, timeout=self.timeout)
+            # Step 3: Coverage gate evaluation
+            if coverage < self.c_min:
+                print(f"[SDHD] Coverage shortfall ({coverage} < {self.c_min}). Generating feedback...")
+                feedback = generate_feedback({}, coverage, self.c_min)
+                continue
 
-        hallucinations = []
-        results = report.get("results", [])
+            # Step 4: Dynamic execution
+            report = execute_dynamic_tests(generated_code, test_cases, timeout=self.timeout)
+            passed = report.get("passed_tests", 0)
+            failed = report.get("failed_tests", 0)
+            crashed = report.get("crashed_tests", 0)
 
-        if report.get("status") == "error":
-            # Entire execution environment crashed
-            hallucinations.append({
-                "source": "dynamic",
-                "error_type": report.get("type", "Logical Failure Hallucination (LFH)"),
-                "variable_name": "execution_environment",
-                "line_number": None,
-                "detail": report.get("message"),
-            })
-            return hallucinations
-
-        for result in results:
-            if result["status"] == "failed":
-                hallucinations.append({
+            # Extract normalized hallucination records
+            current_hallucinations = []
+            if report.get("status") == "error":
+                current_hallucinations.append({
                     "source": "dynamic",
-                    "error_type": result.get("hallucination_type", "Logical Deviation Hallucination (LDH)"),
-                    "variable_name": f"test_index_{result['test_index']}",
+                    "error_type": report.get("type", "Logical Failure Hallucination (LFH)"),
+                    "variable_name": "execution_environment",
                     "line_number": None,
-                    "detail": (
-                        f"Input: {result.get('input')}, "
-                        f"Expected: {result.get('expected')}, "
-                        f"Actual: {result.get('actual')}"
-                    ),
+                    "detail": report.get("message"),
                 })
-            elif result["status"] == "crashed":
-                hallucinations.append({
-                    "source": "dynamic",
-                    "error_type": result.get("hallucination_type", "Logical Failure Hallucination (LFH)"),
-                    "variable_name": f"test_index_{result['test_index']}",
-                    "line_number": None,
-                    "detail": (
-                        f"Input: {result.get('input')}, "
-                        f"Error: {result.get('error')}"
-                    ),
-                })
+            else:
+                for res in report.get("results", []):
+                    if res["status"] == "failed":
+                        current_hallucinations.append({
+                            "source": "dynamic",
+                            "error_type": res.get("hallucination_type", "Logical Deviation Hallucination (LDH)"),
+                            "variable_name": f"test_index_{res['test_index']}",
+                            "line_number": None,
+                            "detail": f"Input: {res.get('input')} | Expected: {res.get('expected')} | Actual: {res.get('actual')}",
+                        })
+                    elif res["status"] == "crashed":
+                        current_hallucinations.append({
+                            "source": "dynamic",
+                            "error_type": res.get("hallucination_type", "Logical Failure Hallucination (LFH)"),
+                            "variable_name": f"test_index_{res['test_index']}",
+                            "line_number": None,
+                            "detail": f"Input: {res.get('input')} | Error: {res.get('error')}",
+                        })
 
-        return hallucinations
+            last_dynamic_hallucinations = current_hallucinations
+
+            # Step 5: Check PASS condition
+            if passed == coverage and coverage >= self.c_min:
+                print(f"[SDHD] Dynamic Stage PASS: All {coverage} test cases passed on iteration {iteration}.")
+                return {
+                    "status": "PASS",
+                    "hallucinations": [],
+                    "iterations": iterations_run,
+                    "test_cases_run": coverage,
+                    "requirements": requirements
+                }
+
+            # If errors present and more iterations allowed, generate feedback and refine
+            if iteration < self.i_max:
+                feedback = generate_feedback(report, coverage, self.c_min)
+                print(f"[SDHD] Iteration {iteration} encountered issues ({failed} failed, {crashed} crashed). Refining...")
+
+        # Loop exhausted without full PASS
+        print(f"[SDHD] Algorithm 3 exhausted after {self.i_max} iterations -> POTENTIAL_HALLUCINATION.")
+        return {
+            "status": "POTENTIAL_HALLUCINATION",
+            "hallucinations": last_dynamic_hallucinations,
+            "iterations": iterations_run,
+            "test_cases_run": len(last_test_cases),
+            "requirements": requirements
+        }
 
     # ------------------------------------------------------------------
-    # Step 4 – Deduplication
+    # Deduplication
     # ------------------------------------------------------------------
     @staticmethod
     def _deduplicate(hallucinations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Removes duplicate hallucination entries by creating a fingerprint
         based on (error_type, variable_name, line_number).
-        Static entries take precedence in the output order.
         """
         seen: set = set()
         unique: List[Dict[str, Any]] = []
@@ -176,13 +217,19 @@ class SDHD_Pipeline:
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
-    def run(self, user_prompt: str, generated_code: str) -> Dict[str, Any]:
+    def run(
+        self,
+        user_prompt: str,
+        generated_code: str,
+        test_gen_fn: Optional[Callable] = None
+    ) -> Dict[str, Any]:
         """
         Orchestrates the full SDHD pipeline end-to-end.
 
         Args:
-            user_prompt:    The original natural-language requirement the LLM was given.
-            generated_code: The Python source code string produced by the LLM.
+            user_prompt:    The natural-language requirement.
+            generated_code: The Python source code string.
+            test_gen_fn:    Optional custom/mock test generator function for testing.
 
         Returns:
             A comprehensive hallucination detection report as a dictionary.
@@ -196,7 +243,7 @@ class SDHD_Pipeline:
 
         all_hallucinations: List[Dict[str, Any]] = []
 
-        # --- Stage 1: Static ---
+        # --- Stage 1: Static Analysis ---
         print("[SDHD] Running static analysis...")
         try:
             static_results = self._run_static_analysis(generated_code)
@@ -206,26 +253,14 @@ class SDHD_Pipeline:
             report["errors"].append({"stage": "static", "error": str(e)})
             print(f"[SDHD] Static analysis failed: {e}")
 
-        # --- Stage 2: Test Case Generation ---
-        test_cases: List[Dict[str, Any]] = []
-        print("[SDHD] Generating test cases via Gemini...")
+        # --- Stage 2 & 3: Dynamic Pipeline (Algorithm 3) ---
+        dynamic_res = {}
         try:
-            test_cases = self._generate_test_cases(user_prompt, generated_code)
-            print(f"[SDHD] {len(test_cases)} test cases generated.")
+            dynamic_res = self._run_dynamic_pipeline(user_prompt, generated_code, test_gen_fn=test_gen_fn)
+            all_hallucinations.extend(dynamic_res.get("hallucinations", []))
         except Exception as e:
-            report["errors"].append({"stage": "test_generation", "error": str(e)})
-            print(f"[SDHD] Test case generation failed: {e}")
-
-        # --- Stage 3: Dynamic ---
-        if test_cases:
-            print("[SDHD] Running dynamic execution tests...")
-            try:
-                dynamic_results = self._run_dynamic_analysis(generated_code, test_cases)
-                all_hallucinations.extend(dynamic_results)
-                print(f"[SDHD] Dynamic analysis complete: {len(dynamic_results)} issue(s) found.")
-            except Exception as e:
-                report["errors"].append({"stage": "dynamic", "error": str(e)})
-                print(f"[SDHD] Dynamic analysis failed: {e}")
+            report["errors"].append({"stage": "dynamic", "error": str(e)})
+            print(f"[SDHD] Dynamic pipeline failed: {e}")
 
         # --- Stage 4: Deduplication ---
         unique_hallucinations = self._deduplicate(all_hallucinations)
@@ -238,11 +273,16 @@ class SDHD_Pipeline:
             etype = h["error_type"]
             type_counts[etype] = type_counts.get(etype, 0) + 1
 
+        overall_status = "PASS" if len(unique_hallucinations) == 0 else "POTENTIAL_HALLUCINATION"
+
         report["summary"] = {
+            "overall_status": overall_status,
             "total_hallucinations": len(unique_hallucinations),
             "static_detections": static_count,
             "dynamic_detections": dynamic_count,
-            "test_cases_run": len(test_cases),
+            "dynamic_status": dynamic_res.get("status", "UNKNOWN"),
+            "refinement_iterations": dynamic_res.get("iterations", 0),
+            "test_cases_run": dynamic_res.get("test_cases_run", 0),
             "breakdown_by_type": type_counts,
         }
         report["hallucinations"] = unique_hallucinations
@@ -264,7 +304,7 @@ def int_divide(a, b):
     return a // b
 """
 
-    pipeline = SDHD_Pipeline(timeout=5, max_retries=2)
+    pipeline = SDHD_Pipeline(timeout=5, c_min=10, i_max=3)
     result = pipeline.run(user_prompt=mock_requirement, generated_code=mock_code)
 
     print("\n--- SDHD Pipeline Final Report ---")
