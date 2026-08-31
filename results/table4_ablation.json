@@ -1,0 +1,2324 @@
+{
+  "splits": {
+    "MBPP": {
+      "SDHD-S": {
+        "detector": "SDHD-S",
+        "metrics": {
+          "TP": 0,
+          "FP": 1,
+          "TN": 9,
+          "FN": 0,
+          "total": 10,
+          "Precision": 0.0,
+          "Recall": 0.0,
+          "F1": 0.0,
+          "Accuracy": 0.9,
+          "FPR": 0.1
+        },
+        "records": [
+          {
+            "task_id": 1,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 2,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 3,
+            "ground_truth": false,
+            "predicted": true,
+            "details": {
+              "static_count": 2,
+              "detections": [
+                {
+                  "source": "static",
+                  "type_code": "ESH",
+                  "error_type": "External Source Hallucination (ESH)",
+                  "location": "c.lower",
+                  "variable_name": "c.lower",
+                  "line_number": 2,
+                  "detail": "Module or receiver 'c' not defined or imported."
+                },
+                {
+                  "source": "static",
+                  "type_code": "ESH",
+                  "error_type": "External Source Hallucination (ESH)",
+                  "location": "c.isalnum",
+                  "variable_name": "c.isalnum",
+                  "line_number": 2,
+                  "detail": "Module or receiver 'c' not defined or imported."
+                }
+              ]
+            }
+          },
+          {
+            "task_id": 4,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 5,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 6,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 7,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 8,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 9,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 10,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          }
+        ]
+      },
+      "SDHD-D": {
+        "detector": "SDHD-D",
+        "metrics": {
+          "TP": 0,
+          "FP": 0,
+          "TN": 10,
+          "FN": 0,
+          "total": 10,
+          "Precision": 0.0,
+          "Recall": 0.0,
+          "F1": 0.0,
+          "Accuracy": 1.0,
+          "FPR": 0.0
+        },
+        "records": [
+          {
+            "task_id": 1,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 2,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 3,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 4,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 5,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 6,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 7,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 8,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 9,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 10,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          }
+        ]
+      },
+      "SDHD": {
+        "detector": "SDHD",
+        "metrics": {
+          "TP": 0,
+          "FP": 1,
+          "TN": 9,
+          "FN": 0,
+          "total": 10,
+          "Precision": 0.0,
+          "Recall": 0.0,
+          "F1": 0.0,
+          "Accuracy": 0.9,
+          "FPR": 0.1
+        },
+        "records": [
+          {
+            "task_id": 1,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": 2,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": 3,
+            "ground_truth": false,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 2,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 2,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": 4,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": 5,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": 6,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": 7,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": 8,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": 9,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": 10,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          }
+        ]
+      }
+    },
+    "CodeHaluEval": {
+      "SDHD-S": {
+        "detector": "SDHD-S",
+        "metrics": {
+          "TP": 0,
+          "FP": 0,
+          "TN": 1,
+          "FN": 4,
+          "total": 5,
+          "Precision": 0.0,
+          "Recall": 0.0,
+          "F1": 0.0,
+          "Accuracy": 0.2,
+          "FPR": 0.0
+        },
+        "records": [
+          {
+            "task_id": "codehalu_001",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "codehalu_002",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "codehalu_003",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "codehalu_004",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "codehalu_005",
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          }
+        ]
+      },
+      "SDHD-D": {
+        "detector": "SDHD-D",
+        "metrics": {
+          "TP": 4,
+          "FP": 0,
+          "TN": 1,
+          "FN": 0,
+          "total": 5,
+          "Precision": 1.0,
+          "Recall": 1.0,
+          "F1": 1.0,
+          "Accuracy": 1.0,
+          "FPR": 0.0
+        },
+        "records": [
+          {
+            "task_id": "codehalu_001",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 1,
+              "iterations": 3,
+              "test_cases_run": 10,
+              "detections": [
+                {
+                  "source": "dynamic",
+                  "type_code": "LDH",
+                  "error_type": "Logical Deviation Hallucination (LDH)",
+                  "location": "test_index_3",
+                  "variable_name": "test_index_3",
+                  "line_number": null,
+                  "detail": "Input: [5] | Expected: False | Actual: True"
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "codehalu_002",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 1,
+              "iterations": 3,
+              "test_cases_run": 10,
+              "detections": [
+                {
+                  "source": "dynamic",
+                  "type_code": "LDH",
+                  "error_type": "Logical Deviation Hallucination (LDH)",
+                  "location": "test_index_2",
+                  "variable_name": "test_index_2",
+                  "line_number": null,
+                  "detail": "Input: [5, 0] | Expected: ValueError | Actual: Cannot divide"
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "codehalu_003",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 4,
+              "iterations": 3,
+              "test_cases_run": 10,
+              "detections": [
+                {
+                  "source": "dynamic",
+                  "type_code": "LFH",
+                  "error_type": "Logical Failure Hallucination (LFH)",
+                  "location": "test_index_1",
+                  "variable_name": "test_index_1",
+                  "line_number": null,
+                  "detail": "Input: [[-1, 2, 3]] | Error: RuntimeError"
+                },
+                {
+                  "source": "dynamic",
+                  "type_code": "LFH",
+                  "error_type": "Logical Failure Hallucination (LFH)",
+                  "location": "test_index_3",
+                  "variable_name": "test_index_3",
+                  "line_number": null,
+                  "detail": "Input: [[-5, -10]] | Error: RuntimeError"
+                },
+                {
+                  "source": "dynamic",
+                  "type_code": "LFH",
+                  "error_type": "Logical Failure Hallucination (LFH)",
+                  "location": "test_index_6",
+                  "variable_name": "test_index_6",
+                  "line_number": null,
+                  "detail": "Input: [[1, -2, 3, -4, 5]] | Error: RuntimeError"
+                },
+                {
+                  "source": "dynamic",
+                  "type_code": "LFH",
+                  "error_type": "Logical Failure Hallucination (LFH)",
+                  "location": "test_index_7",
+                  "variable_name": "test_index_7",
+                  "line_number": null,
+                  "detail": "Input: [[-1]] | Error: RuntimeError"
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "codehalu_004",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 1,
+              "iterations": 3,
+              "test_cases_run": 10,
+              "detections": [
+                {
+                  "source": "dynamic",
+                  "type_code": "LFH",
+                  "error_type": "Logical Failure Hallucination (LFH)",
+                  "location": "test_index_3",
+                  "variable_name": "test_index_3",
+                  "line_number": null,
+                  "detail": "Input: [[]] | Error: ZeroDivisionError"
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "codehalu_005",
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 10,
+              "detections": []
+            }
+          }
+        ]
+      },
+      "SDHD": {
+        "detector": "SDHD",
+        "metrics": {
+          "TP": 4,
+          "FP": 0,
+          "TN": 1,
+          "FN": 0,
+          "total": 5,
+          "Precision": 1.0,
+          "Recall": 1.0,
+          "F1": 1.0,
+          "Accuracy": 1.0,
+          "FPR": 0.0
+        },
+        "records": [
+          {
+            "task_id": "codehalu_001",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 1,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 1,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "codehalu_002",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 1,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 1,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "codehalu_003",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 4,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 4
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "codehalu_004",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 1,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 1
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "codehalu_005",
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          }
+        ]
+      }
+    },
+    "HalluCode": {
+      "SDHD-S": {
+        "detector": "SDHD-S",
+        "metrics": {
+          "TP": 6,
+          "FP": 1,
+          "TN": 0,
+          "FN": 0,
+          "total": 7,
+          "Precision": 0.8571,
+          "Recall": 1.0,
+          "F1": 0.9231,
+          "Accuracy": 0.8571,
+          "FPR": 1.0
+        },
+        "records": [
+          {
+            "task_id": "hallucode_001",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "static_count": 1,
+              "detections": [
+                {
+                  "source": "static",
+                  "type_code": "DCH",
+                  "error_type": "Data Compliance Hallucination (DCH)",
+                  "location": "int Add str",
+                  "variable_name": "int Add str",
+                  "line_number": 2,
+                  "detail": "Cannot add numeric 'int' and text 'str'"
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "hallucode_002",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "static_count": 1,
+              "detections": [
+                {
+                  "source": "static",
+                  "type_code": "SAH",
+                  "error_type": "Structure Access Hallucination (SAH)",
+                  "location": "dict key 'database_name'",
+                  "variable_name": "dict key 'database_name'",
+                  "line_number": 3,
+                  "detail": "Key 'database_name' is provably absent from dictionary."
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "hallucode_003",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "static_count": 1,
+              "detections": [
+                {
+                  "source": "static",
+                  "type_code": "IH",
+                  "error_type": "Identity Hallucination (IH)",
+                  "location": "factor",
+                  "variable_name": "factor",
+                  "line_number": 2,
+                  "detail": "Variable 'factor' used before definition."
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "hallucode_004",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "static_count": 2,
+              "detections": [
+                {
+                  "source": "static",
+                  "type_code": "IH",
+                  "error_type": "Identity Hallucination (IH)",
+                  "location": "phantom_cloud_service",
+                  "variable_name": "phantom_cloud_service",
+                  "line_number": 2,
+                  "detail": "Variable 'phantom_cloud_service' used before definition."
+                },
+                {
+                  "source": "static",
+                  "type_code": "ESH",
+                  "error_type": "External Source Hallucination (ESH)",
+                  "location": "phantom_cloud_service.dispatch",
+                  "variable_name": "phantom_cloud_service.dispatch",
+                  "line_number": 2,
+                  "detail": "Module or receiver 'phantom_cloud_service' not defined or imported."
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "hallucode_005",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "static_count": 2,
+              "detections": [
+                {
+                  "source": "static",
+                  "type_code": "CBH",
+                  "error_type": "Computational Boundary Hallucination (CBH)",
+                  "location": "while True",
+                  "variable_name": "while True",
+                  "line_number": 3,
+                  "detail": "Infinite loop detected: 'while True' loop contains no reachable break or return."
+                },
+                {
+                  "source": "static",
+                  "type_code": "PCH",
+                  "error_type": "Physical Constraint Hallucination (PCH)",
+                  "location": ".append() in infinite loop",
+                  "variable_name": ".append() in infinite loop",
+                  "line_number": 4,
+                  "detail": "Unbounded collection growth via '.append()' inside unconstrained loop (excessive memory consumption)."
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "hallucode_006",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "static_count": 1,
+              "detections": [
+                {
+                  "source": "static",
+                  "type_code": "CBH",
+                  "error_type": "Computational Boundary Hallucination (CBH)",
+                  "location": "recursive function 'recurse_fact'",
+                  "variable_name": "recursive function 'recurse_fact'",
+                  "line_number": 2,
+                  "detail": "Unbounded direct recursion: function 'recurse_fact' contains no reachable base-case condition."
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "hallucode_007",
+            "ground_truth": false,
+            "predicted": true,
+            "details": {
+              "static_count": 1,
+              "detections": [
+                {
+                  "source": "static",
+                  "type_code": "ESH",
+                  "error_type": "External Source Hallucination (ESH)",
+                  "location": "ch.isalnum",
+                  "variable_name": "ch.isalnum",
+                  "line_number": 2,
+                  "detail": "Module or receiver 'ch' not defined or imported."
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "SDHD-D": {
+        "detector": "SDHD-D",
+        "metrics": {
+          "TP": 6,
+          "FP": 1,
+          "TN": 0,
+          "FN": 0,
+          "total": 7,
+          "Precision": 0.8571,
+          "Recall": 1.0,
+          "F1": 0.9231,
+          "Accuracy": 0.8571,
+          "FPR": 1.0
+        },
+        "records": [
+          {
+            "task_id": "hallucode_001",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 0,
+              "iterations": 3,
+              "test_cases_run": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "hallucode_002",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 0,
+              "iterations": 3,
+              "test_cases_run": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "hallucode_003",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 0,
+              "iterations": 3,
+              "test_cases_run": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "hallucode_004",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 0,
+              "iterations": 3,
+              "test_cases_run": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "hallucode_005",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 0,
+              "iterations": 3,
+              "test_cases_run": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "hallucode_006",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 0,
+              "iterations": 3,
+              "test_cases_run": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "hallucode_007",
+            "ground_truth": false,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 0,
+              "iterations": 3,
+              "test_cases_run": 0,
+              "detections": []
+            }
+          }
+        ]
+      },
+      "SDHD": {
+        "detector": "SDHD",
+        "metrics": {
+          "TP": 6,
+          "FP": 1,
+          "TN": 0,
+          "FN": 0,
+          "total": 7,
+          "Precision": 0.8571,
+          "Recall": 1.0,
+          "F1": 0.9231,
+          "Accuracy": 0.8571,
+          "FPR": 1.0
+        },
+        "records": [
+          {
+            "task_id": "hallucode_001",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 1,
+              "breakdown": {
+                "DCH": 1,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "hallucode_002",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 1,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 1,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "hallucode_003",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 1,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 1,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "hallucode_004",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 2,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 1,
+                "ESH": 1,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "hallucode_005",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 2,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 1,
+                "CBH": 1,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "hallucode_006",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 1,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 1,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "hallucode_007",
+            "ground_truth": false,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 1,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 1,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          }
+        ]
+      }
+    },
+    "Combined": {
+      "SDHD-S": {
+        "detector": "SDHD-S",
+        "metrics": {
+          "TP": 6,
+          "FP": 2,
+          "TN": 10,
+          "FN": 4,
+          "total": 22,
+          "Precision": 0.75,
+          "Recall": 0.6,
+          "F1": 0.6667,
+          "Accuracy": 0.7273,
+          "FPR": 0.1667
+        },
+        "records": [
+          {
+            "task_id": 1,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 2,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 3,
+            "ground_truth": false,
+            "predicted": true,
+            "details": {
+              "static_count": 2,
+              "detections": [
+                {
+                  "source": "static",
+                  "type_code": "ESH",
+                  "error_type": "External Source Hallucination (ESH)",
+                  "location": "c.lower",
+                  "variable_name": "c.lower",
+                  "line_number": 2,
+                  "detail": "Module or receiver 'c' not defined or imported."
+                },
+                {
+                  "source": "static",
+                  "type_code": "ESH",
+                  "error_type": "External Source Hallucination (ESH)",
+                  "location": "c.isalnum",
+                  "variable_name": "c.isalnum",
+                  "line_number": 2,
+                  "detail": "Module or receiver 'c' not defined or imported."
+                }
+              ]
+            }
+          },
+          {
+            "task_id": 4,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 5,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 6,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 7,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 8,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 9,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 10,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "codehalu_001",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "codehalu_002",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "codehalu_003",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "codehalu_004",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "codehalu_005",
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "static_count": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "hallucode_001",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "static_count": 1,
+              "detections": [
+                {
+                  "source": "static",
+                  "type_code": "DCH",
+                  "error_type": "Data Compliance Hallucination (DCH)",
+                  "location": "int Add str",
+                  "variable_name": "int Add str",
+                  "line_number": 2,
+                  "detail": "Cannot add numeric 'int' and text 'str'"
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "hallucode_002",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "static_count": 1,
+              "detections": [
+                {
+                  "source": "static",
+                  "type_code": "SAH",
+                  "error_type": "Structure Access Hallucination (SAH)",
+                  "location": "dict key 'database_name'",
+                  "variable_name": "dict key 'database_name'",
+                  "line_number": 3,
+                  "detail": "Key 'database_name' is provably absent from dictionary."
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "hallucode_003",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "static_count": 1,
+              "detections": [
+                {
+                  "source": "static",
+                  "type_code": "IH",
+                  "error_type": "Identity Hallucination (IH)",
+                  "location": "factor",
+                  "variable_name": "factor",
+                  "line_number": 2,
+                  "detail": "Variable 'factor' used before definition."
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "hallucode_004",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "static_count": 2,
+              "detections": [
+                {
+                  "source": "static",
+                  "type_code": "IH",
+                  "error_type": "Identity Hallucination (IH)",
+                  "location": "phantom_cloud_service",
+                  "variable_name": "phantom_cloud_service",
+                  "line_number": 2,
+                  "detail": "Variable 'phantom_cloud_service' used before definition."
+                },
+                {
+                  "source": "static",
+                  "type_code": "ESH",
+                  "error_type": "External Source Hallucination (ESH)",
+                  "location": "phantom_cloud_service.dispatch",
+                  "variable_name": "phantom_cloud_service.dispatch",
+                  "line_number": 2,
+                  "detail": "Module or receiver 'phantom_cloud_service' not defined or imported."
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "hallucode_005",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "static_count": 2,
+              "detections": [
+                {
+                  "source": "static",
+                  "type_code": "CBH",
+                  "error_type": "Computational Boundary Hallucination (CBH)",
+                  "location": "while True",
+                  "variable_name": "while True",
+                  "line_number": 3,
+                  "detail": "Infinite loop detected: 'while True' loop contains no reachable break or return."
+                },
+                {
+                  "source": "static",
+                  "type_code": "PCH",
+                  "error_type": "Physical Constraint Hallucination (PCH)",
+                  "location": ".append() in infinite loop",
+                  "variable_name": ".append() in infinite loop",
+                  "line_number": 4,
+                  "detail": "Unbounded collection growth via '.append()' inside unconstrained loop (excessive memory consumption)."
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "hallucode_006",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "static_count": 1,
+              "detections": [
+                {
+                  "source": "static",
+                  "type_code": "CBH",
+                  "error_type": "Computational Boundary Hallucination (CBH)",
+                  "location": "recursive function 'recurse_fact'",
+                  "variable_name": "recursive function 'recurse_fact'",
+                  "line_number": 2,
+                  "detail": "Unbounded direct recursion: function 'recurse_fact' contains no reachable base-case condition."
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "hallucode_007",
+            "ground_truth": false,
+            "predicted": true,
+            "details": {
+              "static_count": 1,
+              "detections": [
+                {
+                  "source": "static",
+                  "type_code": "ESH",
+                  "error_type": "External Source Hallucination (ESH)",
+                  "location": "ch.isalnum",
+                  "variable_name": "ch.isalnum",
+                  "line_number": 2,
+                  "detail": "Module or receiver 'ch' not defined or imported."
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "SDHD-D": {
+        "detector": "SDHD-D",
+        "metrics": {
+          "TP": 10,
+          "FP": 1,
+          "TN": 11,
+          "FN": 0,
+          "total": 22,
+          "Precision": 0.9091,
+          "Recall": 1.0,
+          "F1": 0.9524,
+          "Accuracy": 0.9545,
+          "FPR": 0.0833
+        },
+        "records": [
+          {
+            "task_id": 1,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 2,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 3,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 4,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 5,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 6,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 7,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 8,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 9,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": 10,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 12,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "codehalu_001",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 1,
+              "iterations": 3,
+              "test_cases_run": 10,
+              "detections": [
+                {
+                  "source": "dynamic",
+                  "type_code": "LDH",
+                  "error_type": "Logical Deviation Hallucination (LDH)",
+                  "location": "test_index_3",
+                  "variable_name": "test_index_3",
+                  "line_number": null,
+                  "detail": "Input: [5] | Expected: False | Actual: True"
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "codehalu_002",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 1,
+              "iterations": 3,
+              "test_cases_run": 10,
+              "detections": [
+                {
+                  "source": "dynamic",
+                  "type_code": "LDH",
+                  "error_type": "Logical Deviation Hallucination (LDH)",
+                  "location": "test_index_2",
+                  "variable_name": "test_index_2",
+                  "line_number": null,
+                  "detail": "Input: [5, 0] | Expected: ValueError | Actual: Cannot divide"
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "codehalu_003",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 4,
+              "iterations": 3,
+              "test_cases_run": 10,
+              "detections": [
+                {
+                  "source": "dynamic",
+                  "type_code": "LFH",
+                  "error_type": "Logical Failure Hallucination (LFH)",
+                  "location": "test_index_1",
+                  "variable_name": "test_index_1",
+                  "line_number": null,
+                  "detail": "Input: [[-1, 2, 3]] | Error: RuntimeError"
+                },
+                {
+                  "source": "dynamic",
+                  "type_code": "LFH",
+                  "error_type": "Logical Failure Hallucination (LFH)",
+                  "location": "test_index_3",
+                  "variable_name": "test_index_3",
+                  "line_number": null,
+                  "detail": "Input: [[-5, -10]] | Error: RuntimeError"
+                },
+                {
+                  "source": "dynamic",
+                  "type_code": "LFH",
+                  "error_type": "Logical Failure Hallucination (LFH)",
+                  "location": "test_index_6",
+                  "variable_name": "test_index_6",
+                  "line_number": null,
+                  "detail": "Input: [[1, -2, 3, -4, 5]] | Error: RuntimeError"
+                },
+                {
+                  "source": "dynamic",
+                  "type_code": "LFH",
+                  "error_type": "Logical Failure Hallucination (LFH)",
+                  "location": "test_index_7",
+                  "variable_name": "test_index_7",
+                  "line_number": null,
+                  "detail": "Input: [[-1]] | Error: RuntimeError"
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "codehalu_004",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 1,
+              "iterations": 3,
+              "test_cases_run": 10,
+              "detections": [
+                {
+                  "source": "dynamic",
+                  "type_code": "LFH",
+                  "error_type": "Logical Failure Hallucination (LFH)",
+                  "location": "test_index_3",
+                  "variable_name": "test_index_3",
+                  "line_number": null,
+                  "detail": "Input: [[]] | Error: ZeroDivisionError"
+                }
+              ]
+            }
+          },
+          {
+            "task_id": "codehalu_005",
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "dynamic_status": "PASS",
+              "dynamic_count": 0,
+              "iterations": 1,
+              "test_cases_run": 10,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "hallucode_001",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 0,
+              "iterations": 3,
+              "test_cases_run": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "hallucode_002",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 0,
+              "iterations": 3,
+              "test_cases_run": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "hallucode_003",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 0,
+              "iterations": 3,
+              "test_cases_run": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "hallucode_004",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 0,
+              "iterations": 3,
+              "test_cases_run": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "hallucode_005",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 0,
+              "iterations": 3,
+              "test_cases_run": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "hallucode_006",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 0,
+              "iterations": 3,
+              "test_cases_run": 0,
+              "detections": []
+            }
+          },
+          {
+            "task_id": "hallucode_007",
+            "ground_truth": false,
+            "predicted": true,
+            "details": {
+              "dynamic_status": "POTENTIAL_HALLUCINATION",
+              "dynamic_count": 0,
+              "iterations": 3,
+              "test_cases_run": 0,
+              "detections": []
+            }
+          }
+        ]
+      },
+      "SDHD": {
+        "detector": "SDHD",
+        "metrics": {
+          "TP": 10,
+          "FP": 2,
+          "TN": 10,
+          "FN": 0,
+          "total": 22,
+          "Precision": 0.8333,
+          "Recall": 1.0,
+          "F1": 0.9091,
+          "Accuracy": 0.9091,
+          "FPR": 0.1667
+        },
+        "records": [
+          {
+            "task_id": 1,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": 2,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": 3,
+            "ground_truth": false,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 2,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 2,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": 4,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": 5,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": 6,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": 7,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": 8,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": 9,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": 10,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": "codehalu_001",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 1,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 1,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "codehalu_002",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 1,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 1,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "codehalu_003",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 4,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 4
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "codehalu_004",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 1,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 1
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "codehalu_005",
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "total_hallucinations": 0,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "PASS"
+            }
+          },
+          {
+            "task_id": "hallucode_001",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 1,
+              "breakdown": {
+                "DCH": 1,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "hallucode_002",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 1,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 1,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "hallucode_003",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 1,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 1,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "hallucode_004",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 2,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 1,
+                "ESH": 1,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "hallucode_005",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 2,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 1,
+                "CBH": 1,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "hallucode_006",
+            "ground_truth": true,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 1,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 0,
+                "PCH": 0,
+                "CBH": 1,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          },
+          {
+            "task_id": "hallucode_007",
+            "ground_truth": false,
+            "predicted": true,
+            "details": {
+              "total_hallucinations": 1,
+              "breakdown": {
+                "DCH": 0,
+                "SAH": 0,
+                "IH": 0,
+                "ESH": 1,
+                "PCH": 0,
+                "CBH": 0,
+                "LDH": 0,
+                "LFH": 0
+              },
+              "overall_status": "POTENTIAL_HALLUCINATION"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

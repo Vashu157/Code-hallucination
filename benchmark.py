@@ -1,21 +1,29 @@
 """
-benchmark.py – SDHD Pipeline Benchmark using the MBPP Dataset
-==============================================================
-Loads the first 20 records from the HuggingFace MBPP dataset, injects
-synthetic bugs into the code, runs the SDHD_Pipeline, and outputs a
-structured summary report of caught vs. missed hallucinations.
+benchmark.py – SDHD Pipeline Benchmark across MBPP, CodeHaluEval, and HalluCode
+================================================================================
+Supports multi-dataset evaluation across all three benchmarks (Section IV-A, Table II):
+  1. MBPP (Clean-code pool for false-positive rate evaluation + synthetic mutations)
+  2. CodeHaluEval (Dynamic execution benchmark with ground-truth labels and test suites)
+  3. HalluCode (Static hallucination benchmark with 6-type annotations)
 """
 
 import ast
 import json
 import random
 import time
-from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-from datasets import load_dataset
-
+from dataset_loaders import (
+    DatasetRecord,
+    load_mbpp,
+    load_codehalueval,
+    load_hallucode,
+    load_all_datasets,
+    get_dataset_summary
+)
 from sdhd_pipeline import SDHD_Pipeline
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -128,37 +136,24 @@ def inject_bug(source_code: str, strategy: Optional[str] = None) -> Tuple[str, s
 # ─────────────────────────────────────────────────────────────────────────────
 
 def load_mbpp_records(n: int = 20) -> List[Dict[str, Any]]:
-    """Loads the first `n` records from the MBPP test split."""
+    """Loads `n` records from MBPP dataset with local fallback."""
     print(f"[Benchmark] Loading {n} records from MBPP dataset...")
-    ds = load_dataset("mbpp", split="test")
-    records = [ds[i] for i in range(min(n, len(ds)))]
+    records_obj = load_mbpp(n=n, clean_only=True)
+    records = [{"task_id": r.task_id, "text": r.prompt, "code": r.code} for r in records_obj]
     print(f"[Benchmark] Loaded {len(records)} records.")
     return records
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Benchmark Runner
+# Benchmark Runners
 # ─────────────────────────────────────────────────────────────────────────────
 
-def run_benchmark(n_records: int = 20, inter_record_delay: float = 13.0) -> Dict[str, Any]:
+def run_benchmark(n_records: int = 20, inter_record_delay: float = 0.0) -> Dict[str, Any]:
     """
-    Main benchmark loop.
-    For each MBPP record:
-      1. Inject a synthetic bug.
-      2. Run the SDHD_Pipeline on the mutated code.
-      3. Record whether any hallucination was caught.
-
-    Args:
-        n_records:           Number of MBPP records to evaluate.
-        inter_record_delay:  Seconds to sleep between records to respect the
-                             free-tier Gemini quota (5 req/min = 12 s/req).
-                             Default 13 s adds a small safety buffer.
-
-    Returns a structured summary report.
+    Synthetic mutation benchmark loop on MBPP.
     """
     records = load_mbpp_records(n_records)
-    # retry_delay=13 s keeps individual retries within quota as well
-    pipeline = SDHD_Pipeline(timeout=5, max_retries=3, retry_delay=13.0)
+    pipeline = SDHD_Pipeline(timeout=5, max_retries=3, retry_delay=1.0)
 
     run_results: List[Dict[str, Any]] = []
     caught = 0
@@ -170,14 +165,9 @@ def run_benchmark(n_records: int = 20, inter_record_delay: float = 13.0) -> Dict
         original_code: str = record.get("code", "")
         task_id: int = record.get("task_id", idx)
 
-        print(f"\n{'='*60}")
-        print(f"[Benchmark] Record {idx + 1}/{n_records} | task_id={task_id}")
-
         # Inject a synthetic bug
         mutated_code, strategy = inject_bug(original_code)
-        print(f"[Benchmark] Injected mutation: '{strategy}'")
 
-        # Run the pipeline (skip dynamic for speed; just static is reliable here)
         try:
             report = pipeline.run(user_prompt=prompt, generated_code=mutated_code)
         except Exception as e:
@@ -188,7 +178,6 @@ def run_benchmark(n_records: int = 20, inter_record_delay: float = 13.0) -> Dict
                 "pipeline_error": str(e),
                 "bug_caught": False,
             })
-            print(f"[Benchmark] Pipeline error: {e}")
             continue
 
         total_found = report["summary"].get("total_hallucinations", 0)
@@ -208,14 +197,9 @@ def run_benchmark(n_records: int = 20, inter_record_delay: float = 13.0) -> Dict
             "pipeline_errors_this_run": len(report.get("errors", [])),
         })
 
-        print(f"[Benchmark] Hallucinations found: {total_found} | Caught: {was_caught}")
-
-        # Rate-limit pacing: sleep between records (skip after the last one)
-        if idx < len(records) - 1:
-            print(f"[Benchmark] Pausing {inter_record_delay:.0f}s to respect API quota...")
+        if inter_record_delay > 0 and idx < len(records) - 1:
             time.sleep(inter_record_delay)
 
-    # ── Build final summary ──────────────────────────────────────────
     mutation_catch_rates: Dict[str, Dict[str, int]] = {}
     for r in run_results:
         s = r.get("mutation_strategy", "unknown")
@@ -226,13 +210,13 @@ def run_benchmark(n_records: int = 20, inter_record_delay: float = 13.0) -> Dict
             mutation_catch_rates[s]["missed"] += 1
 
     final_report = {
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-        "records_tested": n_records,
-        "bugs_injected": n_records,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "records_tested": len(records),
+        "bugs_injected": len(records),
         "bugs_caught": caught,
         "bugs_missed": missed,
         "pipeline_errors": pipeline_errors,
-        "catch_rate_pct": round(caught / n_records * 100, 1) if n_records else 0,
+        "catch_rate_pct": round(caught / len(records) * 100, 1) if records else 0,
         "catch_rate_by_mutation": mutation_catch_rates,
         "per_record_results": run_results,
     }
@@ -240,31 +224,81 @@ def run_benchmark(n_records: int = 20, inter_record_delay: float = 13.0) -> Dict
     return final_report
 
 
+def run_multi_dataset_benchmark(
+    datasets_dict: Optional[Dict[str, List[DatasetRecord]]] = None
+) -> Dict[str, Any]:
+    """
+    Evaluates the SDHD pipeline across all three benchmarks (MBPP, CodeHaluEval, HalluCode)
+    using ground-truth labeled instances (Section IV-A, Table II).
+    """
+    datasets = datasets_dict or load_all_datasets()
+    pipeline = SDHD_Pipeline(timeout=5, c_min=10, i_max=3)
+
+    results: Dict[str, Any] = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "dataset_summary": get_dataset_summary(datasets),
+        "evaluation_by_dataset": {},
+    }
+
+    for dname, recs in datasets.items():
+        total_eval = len(recs)
+        correct_predictions = 0
+        per_record = []
+
+        for rec in recs:
+            try:
+                # Provide custom test runner if tests available
+                mock_gen = None
+                if rec.tests:
+                    def _gen_fn(r_spec, code_str, feedback_str, count):
+                        return rec.tests[:count] if len(rec.tests) >= count else rec.tests * (count // len(rec.tests) + 1)
+                    mock_gen = _gen_fn
+
+                report = pipeline.run(user_prompt=rec.prompt, generated_code=rec.code, test_gen_fn=mock_gen)
+                pred_hallucinated = report["summary"]["total_hallucinations"] > 0
+                is_correct = (pred_hallucinated == rec.is_hallucinated)
+
+                if is_correct:
+                    correct_predictions += 1
+
+                per_record.append({
+                    "task_id": rec.task_id,
+                    "ground_truth_hallucinated": rec.is_hallucinated,
+                    "predicted_hallucinated": pred_hallucinated,
+                    "total_hallucinations_detected": report["summary"]["total_hallucinations"],
+                    "breakdown": report["summary"]["breakdown_by_type"],
+                    "correct": is_correct
+                })
+            except Exception as e:
+                per_record.append({
+                    "task_id": rec.task_id,
+                    "error": str(e),
+                    "correct": False
+                })
+
+        accuracy = round(correct_predictions / total_eval * 100, 1) if total_eval else 0.0
+        results["evaluation_by_dataset"][dname] = {
+            "total_tasks": total_eval,
+            "correct_predictions": correct_predictions,
+            "accuracy_pct": accuracy,
+            "records": per_record
+        }
+
+    return results
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Entry Point
 # ─────────────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    report = run_benchmark(n_records=20)
+    print("\n=== Running Multi-Dataset Benchmark (Table II Benchmarks) ===")
+    multi_report = run_multi_dataset_benchmark()
 
-    print("\n" + "=" * 60)
-    print("         SDHD BENCHMARK SUMMARY REPORT")
-    print("=" * 60)
-    print(f"  Records tested   : {report['records_tested']}")
-    print(f"  Bugs injected    : {report['bugs_injected']}")
-    print(f"  Bugs caught      : {report['bugs_caught']}")
-    print(f"  Bugs missed      : {report['bugs_missed']}")
-    print(f"  Pipeline errors  : {report['pipeline_errors']}")
-    print(f"  Catch rate       : {report['catch_rate_pct']}%")
-    print("\n  Catch rate by mutation strategy:")
-    for strategy, counts in report["catch_rate_by_mutation"].items():
-        total = counts["caught"] + counts["missed"]
-        rate = round(counts["caught"] / total * 100, 1) if total else 0
-        print(f"    {strategy:<28}: {counts['caught']}/{total} ({rate}%)")
-    print("=" * 60)
+    for dname, res in multi_report["evaluation_by_dataset"].items():
+        print(f"[{dname}] Evaluated: {res['total_tasks']} | Correct: {res['correct_predictions']} | Accuracy: {res['accuracy_pct']}%")
 
-    # Save full JSON report to disk
-    report_path = "benchmark_report.json"
-    with open(report_path, "w") as f:
-        json.dump(report, f, indent=2)
-    print(f"\n[Benchmark] Full report saved to: {report_path}")
+    with open("benchmark_report.json", "w") as f:
+        json.dump(multi_report, f, indent=2)
+    print("\n[Benchmark] Report saved to benchmark_report.json")
+

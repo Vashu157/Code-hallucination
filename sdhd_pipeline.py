@@ -15,7 +15,7 @@ Orchestrates the full end-to-end hallucination detection workflow per Paper Algo
 import json
 import re
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Callable
 
 from static_analysis import detect_hallucinations
@@ -28,10 +28,123 @@ from test_case_generator import (
 from dynamic_executor import execute_dynamic_tests
 
 
+# =====================================================================
+# 8-Type Hallucination Taxonomy (Section III-D & Table VII)
+# =====================================================================
+
+TAXONOMY_STATIC = {
+    "DCH": "Data Compliance Hallucination (DCH)",
+    "SAH": "Structure Access Hallucination (SAH)",
+    "IH": "Identity Hallucination (IH)",
+    "ESH": "External Source Hallucination (ESH)",
+    "PCH": "Physical Constraint Hallucination (PCH)",
+    "CBH": "Computational Boundary Hallucination (CBH)",
+}
+
+TAXONOMY_DYNAMIC = {
+    "LDH": "Logical Deviation Hallucination (LDH)",
+    "LFH": "Logical Failure Hallucination (LFH)",  # Also referred to as LBH in early text, normalized to LFH per Table VII
+}
+
+ALL_TAXONOMY_CODES = ["DCH", "SAH", "IH", "ESH", "PCH", "CBH", "LDH", "LFH"]
+
+TAXONOMY_MAP = {**TAXONOMY_STATIC, **TAXONOMY_DYNAMIC}
+
+TAXONOMY_SOURCES = {
+    "DCH": "static",
+    "SAH": "static",
+    "IH": "static",
+    "ESH": "static",
+    "PCH": "static",
+    "CBH": "static",
+    "LDH": "dynamic",
+    "LFH": "dynamic",
+}
+
+
+def get_type_code(error_type_or_code: str) -> str:
+    """Extracts the canonical 3-letter uppercase type code from any taxonomy string."""
+    if not error_type_or_code:
+        return "UNKNOWN"
+    s = str(error_type_or_code).strip()
+    if s in TAXONOMY_MAP:
+        return s
+    if s.upper() == "LBH":
+        return "LFH"
+    m = re.search(r'\b(DCH|SAH|IH|ESH|PCH|CBH|LDH|LFH|LBH)\b', s, re.IGNORECASE)
+    if m:
+        code = m.group(1).upper()
+        return "LFH" if code == "LBH" else code
+    return "UNKNOWN"
+
+
+def normalize_hallucination_record(raw: Dict[str, Any], default_source: str = "static") -> Dict[str, Any]:
+    """
+    Normalizes any static or dynamic detection dict into the canonical record format (Section III-E).
+    Guarantees: source, type_code, error_type, location, variable_name, line_number, detail.
+    """
+    raw_type = (
+        raw.get("type_code")
+        or raw.get("error_type")
+        or raw.get("hallucination_type")
+        or raw.get("type")
+        or "UNKNOWN"
+    )
+    type_code = get_type_code(raw_type)
+    error_type = TAXONOMY_MAP.get(type_code, str(raw_type))
+    source = raw.get("source") or TAXONOMY_SOURCES.get(type_code, default_source)
+
+    location = raw.get("location") or raw.get("variable_name") or "unknown"
+    line_number = raw.get("line_number")
+    detail = raw.get("detail") or raw.get("message") or ""
+
+    return {
+        "source": source,
+        "type_code": type_code,
+        "error_type": error_type,
+        "location": str(location),
+        "variable_name": str(location),  # backwards compatibility alias
+        "line_number": line_number,
+        "detail": str(detail),
+    }
+
+
+def aggregate_and_deduplicate(
+    static_results: List[Dict[str, Any]],
+    dynamic_results: List[Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    """
+    Implements Section III-E aggregation:
+      D_Output = O1 U O2 with deduplication on (location, content / fingerprint).
+    """
+    all_normalized: List[Dict[str, Any]] = []
+    for item in static_results:
+        all_normalized.append(normalize_hallucination_record(item, default_source="static"))
+    for item in dynamic_results:
+        all_normalized.append(normalize_hallucination_record(item, default_source="dynamic"))
+
+    seen: set = set()
+    unique: List[Dict[str, Any]] = []
+
+    for rec in all_normalized:
+        detail_snippet = " ".join(rec["detail"].strip().split())
+        fingerprint = (
+            rec["type_code"],
+            rec["location"],
+            rec["line_number"],
+            detail_snippet
+        )
+        if fingerprint not in seen:
+            seen.add(fingerprint)
+            unique.append(rec)
+
+    return unique
+
+
 class SDHD_Pipeline:
     """
     Static-Dynamic Hallucination Detection (SDHD) Pipeline.
-    Implements Algorithm 3 refinement loop and full static hallucination detection.
+    Implements Section III-D/E aggregation and Algorithm 3 refinement loop.
     """
 
     def __init__(
@@ -57,7 +170,7 @@ class SDHD_Pipeline:
         self.i_max = i_max
 
     # ------------------------------------------------------------------
-    # Step 1 – Static Analysis
+    # Step 1 – Static Analysis (O1)
     # ------------------------------------------------------------------
     def _run_static_analysis(self, generated_code: str) -> List[Dict[str, Any]]:
         """
@@ -67,17 +180,11 @@ class SDHD_Pipeline:
         raw_errors = detect_hallucinations(generated_code)
         normalized = []
         for err in raw_errors:
-            normalized.append({
-                "source": "static",
-                "error_type": err.get("error_type", "Unknown"),
-                "variable_name": err.get("variable_name", "unknown"),
-                "line_number": err.get("line_number"),
-                "detail": err.get("detail"),
-            })
+            normalized.append(normalize_hallucination_record(err, default_source="static"))
         return normalized
 
     # ------------------------------------------------------------------
-    # Step 2 – Dynamic Execution Stage (Algorithm 3)
+    # Step 2 – Dynamic Execution Stage (Algorithm 3) (O2)
     # ------------------------------------------------------------------
     def _run_dynamic_pipeline(
         self,
@@ -126,7 +233,11 @@ class SDHD_Pipeline:
             # Step 3: Coverage gate evaluation
             if coverage < self.c_min:
                 print(f"[SDHD] Coverage shortfall ({coverage} < {self.c_min}). Generating feedback...")
-                feedback = generate_feedback({}, coverage, self.c_min)
+                # BUG-14 FIX: The previous `last_dynamic_hallucinations and X or Y` expression
+                # was inverted: when hallucinations list was non-empty it fed a fake empty report,
+                # discarding actual context. Coverage shortfall always uses a fixed shortfall report.
+                feedback = generate_feedback({"results": [], "status": "shortfall"}, coverage, self.c_min)
+
                 continue
 
             # Step 4: Dynamic execution
@@ -138,31 +249,34 @@ class SDHD_Pipeline:
             # Extract normalized hallucination records
             current_hallucinations = []
             if report.get("status") == "error":
-                current_hallucinations.append({
+                current_hallucinations.append(normalize_hallucination_record({
                     "source": "dynamic",
+                    "type_code": "LFH",
                     "error_type": report.get("type", "Logical Failure Hallucination (LFH)"),
-                    "variable_name": "execution_environment",
+                    "location": "execution_environment",
                     "line_number": None,
-                    "detail": report.get("message"),
-                })
+                    "detail": report.get("message", "Dynamic execution environment failure."),
+                }, default_source="dynamic"))
             else:
                 for res in report.get("results", []):
                     if res["status"] == "failed":
-                        current_hallucinations.append({
+                        current_hallucinations.append(normalize_hallucination_record({
                             "source": "dynamic",
+                            "type_code": res.get("type_code", "LDH"),
                             "error_type": res.get("hallucination_type", "Logical Deviation Hallucination (LDH)"),
-                            "variable_name": f"test_index_{res['test_index']}",
+                            "location": f"test_index_{res['test_index']}",
                             "line_number": None,
                             "detail": f"Input: {res.get('input')} | Expected: {res.get('expected')} | Actual: {res.get('actual')}",
-                        })
+                        }, default_source="dynamic"))
                     elif res["status"] == "crashed":
-                        current_hallucinations.append({
+                        current_hallucinations.append(normalize_hallucination_record({
                             "source": "dynamic",
+                            "type_code": res.get("type_code", "LFH"),
                             "error_type": res.get("hallucination_type", "Logical Failure Hallucination (LFH)"),
-                            "variable_name": f"test_index_{res['test_index']}",
+                            "location": f"test_index_{res['test_index']}",
                             "line_number": None,
                             "detail": f"Input: {res.get('input')} | Error: {res.get('error')}",
-                        })
+                        }, default_source="dynamic"))
 
             last_dynamic_hallucinations = current_hallucinations
 
@@ -193,26 +307,19 @@ class SDHD_Pipeline:
         }
 
     # ------------------------------------------------------------------
-    # Deduplication
+    # Deduplication & Aggregation (Section III-E)
     # ------------------------------------------------------------------
     @staticmethod
     def _deduplicate(hallucinations: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
-        Removes duplicate hallucination entries by creating a fingerprint
-        based on (error_type, variable_name, line_number).
+        Removes duplicate hallucination entries using canonical fingerprinting.
+        BUG-15 FIX: Previously called aggregate_and_deduplicate(hallucinations, []) which forced
+        default_source="static" on ALL input records (including dynamic ones), corrupting the source field.
+        Now partitions records by existing 'source' field to preserve correctness.
         """
-        seen: set = set()
-        unique: List[Dict[str, Any]] = []
-        for item in hallucinations:
-            key = (
-                item.get("error_type"),
-                item.get("variable_name"),
-                item.get("line_number"),
-            )
-            if key not in seen:
-                seen.add(key)
-                unique.append(item)
-        return unique
+        static_recs = [r for r in hallucinations if r.get("source") != "dynamic"]
+        dynamic_recs = [r for r in hallucinations if r.get("source") == "dynamic"]
+        return aggregate_and_deduplicate(static_recs, dynamic_recs)
 
     # ------------------------------------------------------------------
     # Public API
@@ -225,6 +332,7 @@ class SDHD_Pipeline:
     ) -> Dict[str, Any]:
         """
         Orchestrates the full SDHD pipeline end-to-end.
+        Aggregates static (O1) and dynamic (O2) findings into D_Output = O1 U O2.
 
         Args:
             user_prompt:    The natural-language requirement.
@@ -235,43 +343,54 @@ class SDHD_Pipeline:
             A comprehensive hallucination detection report as a dictionary.
         """
         report: Dict[str, Any] = {
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "summary": {},
             "hallucinations": [],
+            "stages": {},
             "errors": [],
         }
 
-        all_hallucinations: List[Dict[str, Any]] = []
+        static_results: List[Dict[str, Any]] = []
+        dynamic_results: List[Dict[str, Any]] = []
+        static_failed = False
+        dynamic_failed = False
 
-        # --- Stage 1: Static Analysis ---
+        # --- Stage 1: Static Analysis (O1) ---
         print("[SDHD] Running static analysis...")
         try:
             static_results = self._run_static_analysis(generated_code)
-            all_hallucinations.extend(static_results)
             print(f"[SDHD] Static analysis complete: {len(static_results)} issue(s) found.")
         except Exception as e:
+            static_failed = True
             report["errors"].append({"stage": "static", "error": str(e)})
             print(f"[SDHD] Static analysis failed: {e}")
 
-        # --- Stage 2 & 3: Dynamic Pipeline (Algorithm 3) ---
-        dynamic_res = {}
+        # --- Stage 2 & 3: Dynamic Pipeline (Algorithm 3) (O2) ---
+        dynamic_res: Dict[str, Any] = {}
         try:
             dynamic_res = self._run_dynamic_pipeline(user_prompt, generated_code, test_gen_fn=test_gen_fn)
-            all_hallucinations.extend(dynamic_res.get("hallucinations", []))
+            dynamic_results = dynamic_res.get("hallucinations", [])
         except Exception as e:
+            dynamic_failed = True
             report["errors"].append({"stage": "dynamic", "error": str(e)})
             print(f"[SDHD] Dynamic pipeline failed: {e}")
 
-        # --- Stage 4: Deduplication ---
-        unique_hallucinations = self._deduplicate(all_hallucinations)
+        # --- Stage 4: Formal Aggregation & Deduplication (Section III-E: D_Output = O1 U O2) ---
+        unique_hallucinations = aggregate_and_deduplicate(static_results, dynamic_results)
 
-        # --- Build Summary ---
+        # --- Build Summary & 8-Type Breakdown ---
         static_count = sum(1 for h in unique_hallucinations if h["source"] == "static")
         dynamic_count = sum(1 for h in unique_hallucinations if h["source"] == "dynamic")
-        type_counts: Dict[str, int] = {}
+
+        # Initialize all 8 categories with 0 per Section III-D
+        type_counts: Dict[str, int] = {code: 0 for code in ALL_TAXONOMY_CODES}
         for h in unique_hallucinations:
-            etype = h["error_type"]
-            type_counts[etype] = type_counts.get(etype, 0) + 1
+            tcode = h.get("type_code")
+            if tcode in type_counts:
+                type_counts[tcode] += 1
+            # BUG-13 FIX: UNKNOWN type_codes are silently skipped — they are counted in
+            # total_hallucinations but must NOT insert new keys into the fixed 8-key breakdown dict.
+
 
         overall_status = "PASS" if len(unique_hallucinations) == 0 else "POTENTIAL_HALLUCINATION"
 
@@ -286,6 +405,21 @@ class SDHD_Pipeline:
             "breakdown_by_type": type_counts,
         }
         report["hallucinations"] = unique_hallucinations
+        report["stages"] = {
+            "static": {
+                "status": "ERROR" if static_failed else "COMPLETED",
+                "count": len(static_results),
+                "detections": static_results,
+            },
+            "dynamic": {
+                "status": "ERROR" if dynamic_failed else dynamic_res.get("status", "UNKNOWN"),
+                "iterations": dynamic_res.get("iterations", 0),
+                "test_cases_run": dynamic_res.get("test_cases_run", 0),
+                "requirements": dynamic_res.get("requirements", {}),
+                "count": len(dynamic_results),
+                "detections": dynamic_results,
+            }
+        }
 
         return report
 
@@ -304,8 +438,14 @@ def int_divide(a, b):
     return a // b
 """
 
+    def mock_test_gen(reqs, code, feedback, count):
+        tests = [{"input": [i * 2, 2], "expected_output": i} for i in range(count - 1)]
+        tests.append({"input": [5, 0], "expected_output": "ZeroDivisionError"})
+        return tests
+
     pipeline = SDHD_Pipeline(timeout=5, c_min=10, i_max=3)
-    result = pipeline.run(user_prompt=mock_requirement, generated_code=mock_code)
+    result = pipeline.run(user_prompt=mock_requirement, generated_code=mock_code, test_gen_fn=mock_test_gen)
 
     print("\n--- SDHD Pipeline Final Report ---")
     print(json.dumps(result, indent=2))
+

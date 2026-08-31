@@ -1,0 +1,30 @@
+{
+  "MBPP": {
+    "count": 10,
+    "avg_static_ms": 2.87,
+    "avg_dynamic_ms": 461.12,
+    "avg_total_ms": 464.0,
+    "throughput_tasks_per_sec": 2.16
+  },
+  "CodeHaluEval": {
+    "count": 5,
+    "avg_static_ms": 1.67,
+    "avg_dynamic_ms": 772.28,
+    "avg_total_ms": 773.95,
+    "throughput_tasks_per_sec": 1.29
+  },
+  "HalluCode": {
+    "count": 7,
+    "avg_static_ms": 3.84,
+    "avg_dynamic_ms": 239.58,
+    "avg_total_ms": 243.42,
+    "throughput_tasks_per_sec": 4.11
+  },
+  "Combined": {
+    "count": 22,
+    "avg_static_ms": 2.14,
+    "avg_dynamic_ms": 464.12,
+    "avg_total_ms": 466.26,
+    "throughput_tasks_per_sec": 2.14
+  }
+}

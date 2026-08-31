@@ -1,6 +1,7 @@
 import traceback
 import multiprocessing
 import ast
+import math
 from typing import Dict, Any, List
 
 def _run_test(source_code: str, test_cases_json: list, result_queue: multiprocessing.Queue):
@@ -17,6 +18,7 @@ def _run_test(source_code: str, test_cases_json: list, result_queue: multiproces
         result_queue.put({
             "status": "error",
             "type": "Logical Failure Hallucination (LFH)",
+            "type_code": "LFH",
             "message": "Source code failed to execute at module level (compilation/import crash).",
             "error": traceback.format_exc()
         })
@@ -37,6 +39,7 @@ def _run_test(source_code: str, test_cases_json: list, result_queue: multiproces
         result_queue.put({
             "status": "error",
             "type": "Logical Failure Hallucination (LFH)",
+            "type_code": "LFH",
             "message": f"Function '{func_name}' not found or not callable in the executed code."
         })
         return
@@ -50,6 +53,14 @@ def _run_test(source_code: str, test_cases_json: list, result_queue: multiproces
         "crashed_tests": 0,
         "results": []
     }
+
+    def _outputs_match(actual: Any, expected: Any) -> bool:
+        """BUG-9 FIX: Use math.isclose for float comparisons to avoid precision false LDH."""
+        if isinstance(actual, float) and isinstance(expected, (int, float)):
+            return math.isclose(actual, expected, rel_tol=1e-9, abs_tol=1e-9)
+        if isinstance(expected, float) and isinstance(actual, (int, float)):
+            return math.isclose(actual, expected, rel_tol=1e-9, abs_tol=1e-9)
+        return actual == expected
     
     # 2. Run test cases
     for i, test in enumerate(test_cases_json):
@@ -65,7 +76,7 @@ def _run_test(source_code: str, test_cases_json: list, result_queue: multiproces
             else:
                 actual = func(inputs)
                 
-            if actual == expected:
+            if _outputs_match(actual, expected):
                 report["passed_tests"] += 1
                 report["results"].append({
                     "test_index": i,
@@ -79,22 +90,37 @@ def _run_test(source_code: str, test_cases_json: list, result_queue: multiproces
                 report["results"].append({
                     "test_index": i,
                     "status": "failed",
+                    "type_code": "LDH",
                     "hallucination_type": "Logical Deviation Hallucination (LDH)",
                     "input": inputs,
                     "expected": expected,
                     "actual": actual
                 })
         except Exception as e:
-            report["crashed_tests"] += 1
-            report["results"].append({
-                "test_index": i,
-                "status": "crashed",
-                "hallucination_type": "Logical Failure Hallucination (LFH)",
-                "input": inputs,
-                "expected": expected,
-                "error": type(e).__name__,
-                "traceback": traceback.format_exc()
-            })
+            # BUG-10 FIX: If expected_output is a string matching the raised exception's
+            # type name (e.g. "ValueError"), treat this as a PASS not a crash.
+            exc_type_name = type(e).__name__
+            if isinstance(expected, str) and expected == exc_type_name:
+                report["passed_tests"] += 1
+                report["results"].append({
+                    "test_index": i,
+                    "status": "passed",
+                    "input": inputs,
+                    "expected": expected,
+                    "actual": f"raised {exc_type_name} (expected)"
+                })
+            else:
+                report["crashed_tests"] += 1
+                report["results"].append({
+                    "test_index": i,
+                    "status": "crashed",
+                    "type_code": "LFH",
+                    "hallucination_type": "Logical Failure Hallucination (LFH)",
+                    "input": inputs,
+                    "expected": expected,
+                    "error": exc_type_name,
+                    "traceback": traceback.format_exc()
+                })
             
     result_queue.put(report)
 
@@ -122,16 +148,21 @@ def execute_dynamic_tests(source_code: str, test_cases_json: List[Dict[str, Any]
         return {
             "status": "error",
             "type": "Logical Failure Hallucination (LFH)",
+            "type_code": "LFH",
             "message": f"Execution exceeded timeout of {timeout} seconds.",
             "error": "TimeoutError"
         }
-        
-    if not result_queue.empty():
-        return result_queue.get()
-    else:
+
+    # BUG-12 FIX: Use result_queue.get(timeout=2) instead of checking .empty() first.
+    # The .empty() check is unreliable: the OS pipe buffer may not have been fully
+    # flushed when the parent reads it immediately after process.join().
+    try:
+        return result_queue.get(timeout=2)
+    except Exception:
         return {
             "status": "error",
             "type": "Logical Failure Hallucination (LFH)",
+            "type_code": "LFH",
             "message": "The execution process crashed unexpectedly without returning results."
         }
 

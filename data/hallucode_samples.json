@@ -1,0 +1,113 @@
+[
+  {
+    "task_id": "hallucode_001",
+    "prompt": "Format user details with name and age.",
+    "code": "def format_user(name: str, age: int) -> str:\n    message = age + ' years old'\n    return f'{name} is {message}'",
+    "clean_code": "def format_user(name: str, age: int) -> str:\n    return f'{name} is {age} years old'",
+    "tests": [],
+    "ground_truth_labels": [
+      {
+        "type_code": "DCH",
+        "error_type": "Data Compliance Hallucination (DCH)",
+        "location": "int Add str",
+        "line_number": 2,
+        "detail": "Incompatible binary addition between int and str"
+      }
+    ],
+    "is_hallucinated": true
+  },
+  {
+    "task_id": "hallucode_002",
+    "prompt": "Look up database port configuration.",
+    "code": "def get_db_port() -> int:\n    config = {'host': 'localhost', 'port': 5432}\n    return config['database_name']",
+    "clean_code": "def get_db_port() -> int:\n    config = {'host': 'localhost', 'port': 5432}\n    return config['port']",
+    "tests": [],
+    "ground_truth_labels": [
+      {
+        "type_code": "SAH",
+        "error_type": "Structure Access Hallucination (SAH)",
+        "location": "dict key 'database_name'",
+        "line_number": 3,
+        "detail": "Key 'database_name' is provably absent from dictionary"
+      }
+    ],
+    "is_hallucinated": true
+  },
+  {
+    "task_id": "hallucode_003",
+    "prompt": "Calculate result using multiplier.",
+    "code": "def calculate_total(base_val: int) -> int:\n    total = base_val * factor\n    return total",
+    "clean_code": "def calculate_total(base_val: int, factor: int = 1) -> int:\n    return base_val * factor",
+    "tests": [],
+    "ground_truth_labels": [
+      {
+        "type_code": "IH",
+        "error_type": "Identity Hallucination (IH)",
+        "location": "factor",
+        "line_number": 2,
+        "detail": "Variable 'factor' used before definition"
+      }
+    ],
+    "is_hallucinated": true
+  },
+  {
+    "task_id": "hallucode_004",
+    "prompt": "Execute remote compute task.",
+    "code": "def execute_task(payload):\n    return phantom_cloud_service.dispatch(payload)",
+    "clean_code": "def execute_task(payload):\n    return {'status': 'executed', 'data': payload}",
+    "tests": [],
+    "ground_truth_labels": [
+      {
+        "type_code": "ESH",
+        "error_type": "External Source Hallucination (ESH)",
+        "location": "phantom_cloud_service.dispatch",
+        "line_number": 2,
+        "detail": "Module or receiver 'phantom_cloud_service' not defined or imported"
+      }
+    ],
+    "is_hallucinated": true
+  },
+  {
+    "task_id": "hallucode_005",
+    "prompt": "Buffer incoming log lines indefinitely in loop.",
+    "code": "def buffer_logs():\n    buf = []\n    while True:\n        buf.append('new_log_record')",
+    "clean_code": "def buffer_logs(max_size=100):\n    buf = []\n    for i in range(max_size):\n        buf.append('new_log_record')\n    return buf",
+    "tests": [],
+    "ground_truth_labels": [
+      {
+        "type_code": "PCH",
+        "error_type": "Physical Constraint Hallucination (PCH)",
+        "location": ".append() in infinite loop",
+        "line_number": 4,
+        "detail": "Unbounded collection growth via '.append()' inside unconstrained loop"
+      }
+    ],
+    "is_hallucinated": true
+  },
+  {
+    "task_id": "hallucode_006",
+    "prompt": "Calculate factorial using direct recursion.",
+    "code": "def recurse_fact(n):\n    return recurse_fact(n - 1) * n",
+    "clean_code": "def recurse_fact(n):\n    if n <= 1:\n        return 1\n    return recurse_fact(n - 1) * n",
+    "tests": [],
+    "ground_truth_labels": [
+      {
+        "type_code": "CBH",
+        "error_type": "Computational Boundary Hallucination (CBH)",
+        "location": "recursive function 'recurse_fact'",
+        "line_number": 2,
+        "detail": "Unbounded direct recursion: function contains no reachable base-case"
+      }
+    ],
+    "is_hallucinated": true
+  },
+  {
+    "task_id": "hallucode_007",
+    "prompt": "Clean string of non-alphanumeric characters.",
+    "code": "def clean_string(raw: str) -> str:\n    return ''.join(ch for ch in raw if ch.isalnum())",
+    "clean_code": "def clean_string(raw: str) -> str:\n    return ''.join(ch for ch in raw if ch.isalnum())",
+    "tests": [],
+    "ground_truth_labels": [],
+    "is_hallucinated": false
+  }
+]

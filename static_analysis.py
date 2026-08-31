@@ -1,4 +1,5 @@
 import ast
+import copy
 import builtins
 import re
 from typing import List, Dict, Set, Any, Optional, Union, Tuple
@@ -443,7 +444,9 @@ def compute_dominators(cfg: CFG) -> None:
             continue
         sdom = dom[b.block_id] - {b}
         if sdom:
-            idom_block = max(sdom, key=lambda d: len(dom[d.block_id]))
+            # BUG-3 FIX: Break ties by selecting the strict dominator with the largest dominator set
+            # (deepest in the tree), then by block_id for determinism when sizes are equal.
+            idom_block = max(sdom, key=lambda d: (len(dom[d.block_id]), d.block_id))
             b.idom = idom_block
             idom_block.dom_children.append(b)
 
@@ -615,8 +618,13 @@ class SSARenamer:
                 self._rename_expr_uses(stmt.value, stmt.lineno)
             self._rename_target_defs(stmt.target, stmt.lineno, pushed, value_node=stmt.value, annotation_node=stmt.annotation)
         elif isinstance(stmt, ast.AugAssign):
-            self._rename_expr_uses(stmt.target, stmt.lineno)
+            # BUG-2 FIX: Capture the base var name BEFORE _rename_expr_uses mutates target.id
+            aug_base_var = stmt.target.id if isinstance(stmt.target, ast.Name) else None
+            self._rename_expr_uses(stmt.target, stmt.lineno)  # reads from target (load context)
             self._rename_expr_uses(stmt.value, stmt.lineno)
+            # Pass aug_base_var so _rename_target_defs uses the original name, not the SSA-renamed one
+            if aug_base_var is not None and isinstance(stmt.target, ast.Name):
+                stmt.target.id = aug_base_var  # restore pre-read name so _rename_target_defs names correctly
             self._rename_target_defs(stmt.target, stmt.lineno, pushed, value_node=stmt.value)
         elif isinstance(stmt, ast.Expr):
             self._rename_expr_uses(stmt.value, stmt.lineno)
@@ -690,15 +698,19 @@ class SSARenamer:
             if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
                 if node.id in self.maybe_undefined_vars:
                     base_var = self.var_version_map.get(node.id, node.id)
-                    err_entry = {
-                        'error_type': 'Identity Hallucination (IH)',
-                        'variable_name': base_var,
-                        'ssa_version': node.id,
-                        'line_number': stmt.lineno,
-                        'detail': f"Variable '{base_var}' is potentially undefined (defined only on conditional branch)."
-                    }
-                    if err_entry not in self.undefined_uses:
-                        self.undefined_uses.append(err_entry)
+                    # BUG-4 FIX: Use a set key for O(1) deduplication instead of O(N) list search
+                    err_key = ('Identity Hallucination (IH)', base_var, stmt.lineno, node.id)
+                    if not hasattr(self, '_seen_maybe_undef'):
+                        self._seen_maybe_undef: Set[tuple] = set()
+                    if err_key not in self._seen_maybe_undef:
+                        self._seen_maybe_undef.add(err_key)
+                        self.undefined_uses.append({
+                            'error_type': 'Identity Hallucination (IH)',
+                            'variable_name': base_var,
+                            'ssa_version': node.id,
+                            'line_number': stmt.lineno,
+                            'detail': f"Variable '{base_var}' is potentially undefined (defined only on conditional branch)."
+                        })
 
     def _rename_target_defs(self, target: ast.expr, lineno: int, pushed: List[str], value_node: Optional[ast.AST] = None, annotation_node: Optional[ast.AST] = None) -> None:
         """Assigns fresh SSA versions to definition targets and extracts type/structure info."""
@@ -936,8 +948,19 @@ class StaticDetector(ast.NodeVisitor):
                 self.var_types[ver] = vtype
             for ver, keys in renamer.var_dicts.items():
                 self.var_dicts[ver] = keys
+                # BUG-1 companion: Also index by base var so the original-tree subscript visitor finds it
+                base = renamer.var_version_map.get(ver, ver)
+                if base not in self.var_dicts:
+                    self.var_dicts[base] = keys
             for ver, length in renamer.var_seq_lengths.items():
                 self.var_seq_lengths[ver] = length
+                base = renamer.var_version_map.get(ver, ver)
+                if base not in self.var_seq_lengths:
+                    self.var_seq_lengths[base] = length
+            for ver, vtype in renamer.var_types.items():
+                base = renamer.var_version_map.get(ver, ver)
+                if base not in self.var_types:
+                    self.var_types[base] = vtype
 
             for err in renamer.undefined_uses:
                 self.errors.append({
@@ -948,13 +971,29 @@ class StaticDetector(ast.NodeVisitor):
                 })
 
     def _get_base_var(self, name: str) -> str:
-        """Maps an SSA variable name back to its base variable name."""
+        """Maps an SSA variable name back to its base variable name.
+
+        Priority:
+        1. Exact hit in var_version_map (authoritative SSA metadata).
+        2. Greedy regex strip of a trailing pure-digit suffix — only applied when
+           the candidate base name actually appears in var_version_map values,
+           preventing false strips of real identifiers like 'md5' or 'i18n'.
+        3. Return original name unchanged.
+        """
+        # 1. Authoritative lookup
         for renamer in self.renamers:
             if name in renamer.var_version_map:
                 return renamer.var_version_map[name]
-        m = re.match(r'^([a-zA-Z_]\w*?)\d+$', name)
+        # 2. BUG-6 FIX: Use greedy match (not non-greedy \w*?) so 'x10' → 'x', 'md5' → 'md5'
+        #    only strip if result is a known base var; otherwise keep the name intact.
+        m = re.match(r'^([a-zA-Z_]\w*\D)\d+$', name)
         if m:
-            return m.group(1)
+            candidate = m.group(1)
+            all_base_vars: Set[str] = set()
+            for renamer in self.renamers:
+                all_base_vars.update(renamer.var_version_map.values())
+            if candidate in all_base_vars:
+                return candidate
         return name
 
     def _get_inferred_type(self, node: ast.AST) -> str:
@@ -1079,6 +1118,16 @@ class StaticDetector(ast.NodeVisitor):
                 elif left_type == "dict" or right_type == "dict":
                     is_dch = True
                     msg = "Cannot multiply dictionary"
+                # BUG-7 FIX: list * list and set * anything are invalid
+                elif left_type == "list" and right_type not in ("int", "unknown"):
+                    is_dch = True
+                    msg = f"Cannot multiply list by non-int type '{right_type}'"
+                elif right_type == "list" and left_type not in ("int", "unknown"):
+                    is_dch = True
+                    msg = f"Cannot multiply list by non-int type '{left_type}'"
+                elif left_type == "set" or right_type == "set":
+                    is_dch = True
+                    msg = f"Unsupported multiplication on 'set' type"
 
             if is_dch:
                 self.errors.append({
@@ -1147,7 +1196,10 @@ class StaticDetector(ast.NodeVisitor):
                         'detail': "range() step argument must not be zero."
                     })
 
-        if not is_esh:
+        # BUG-5 FIX: Always visit arguments regardless of ESH. Only skip visiting node.func
+        # itself when ESH flagged on a bare Name, to avoid cascading false positives.
+        # For Attribute calls, the object was already inspected in the ESH attribute branch.
+        if not is_esh or isinstance(node.func, ast.Attribute):
             self.visit(node.func)
         for arg in node.args:
             self.visit(arg)
@@ -1190,11 +1242,27 @@ class StaticDetector(ast.NodeVisitor):
 
         self.generic_visit(node)
 
+    def _walk_loop_body_no_nested_funcs(self, stmts: List[ast.stmt]):
+        """Yields all AST nodes inside loop body statements, but does NOT
+        descend into nested FunctionDef / AsyncFunctionDef bodies.
+        This prevents a 'return' inside a lambda or helper function from
+        incorrectly marking the enclosing while-loop as having an exit.
+        """
+        for stmt in stmts:
+            yield stmt
+            for child in ast.walk(stmt):
+                if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)) and child is not stmt:
+                    # Do not descend further into nested function bodies
+                    continue
+                yield child
+
     def visit_While(self, node: ast.While) -> None:
         is_const_true = isinstance(node.test, ast.Constant) and bool(node.test.value)
 
+        # BUG-8 FIX: Only check for Break/Return in the direct loop body,
+        # excluding nested function definitions which have their own scopes.
         has_break_or_return = False
-        for child in ast.walk(node):
+        for child in self._walk_loop_body_no_nested_funcs(node.body):
             if isinstance(child, (ast.Break, ast.Return)):
                 has_break_or_return = True
                 break
@@ -1331,14 +1399,32 @@ def detect_hallucinations(source_code: str) -> List[Dict[str, Any]]:
     """
     analyzer = CodeAnalyzer(source_code)
     analyzer.parse()
-    renamers = analyzer.transform_ssa()
+
+    # BUG-1 FIX: Deep-copy the original AST before SSA transformation.
+    # SSARenamer mutates ast.Name.id nodes in-place (e.g. 'x' -> 'x1').
+    # StaticDetector must walk the ORIGINAL tree to correctly resolve user-facing
+    # variable names, dict/sequence metadata (var_values, var_seq_lengths), and
+    # function parameter names. Without this copy, the detector sees 'age1' instead
+    # of 'age' and misses SAH/DCH entries that depend on the original name lookups.
+    original_tree = copy.deepcopy(analyzer.ast_tree)
+
+    renamers = analyzer.transform_ssa()  # mutates analyzer.ast_tree in-place
 
     detector = StaticDetector(renamers=renamers, function_ssas=analyzer.ssa_transformer.function_ssas)
-    detector.visit(analyzer.ast_tree)
+    detector.visit(original_tree)  # walk the un-mutated original tree
 
     seen = set()
     unique_errors = []
     for err in detector.errors:
+        if 'type_code' not in err:
+            m = re.search(r'\((DCH|SAH|IH|ESH|PCH|CBH)\)', err.get('error_type', ''))
+            err['type_code'] = m.group(1) if m else 'UNKNOWN'
+        if 'location' not in err:
+            err['location'] = err.get('variable_name', 'unknown')
+        if 'variable_name' not in err:
+            err['variable_name'] = err.get('location', 'unknown')
+        err['source'] = 'static'
+
         key = (err['error_type'], err['variable_name'], err['line_number'])
         if key not in seen:
             seen.add(key)
