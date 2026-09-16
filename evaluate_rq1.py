@@ -213,7 +213,7 @@ class RQ1Evaluator:
         lines.append("### Statistical Significance (McNemar Test on Combined Split)")
         sig_data = benchmark_data.get("significance", {})
         if sig_data:
-            lines.append("| Comparison | SDHD Wins | Baseline Wins | Chi² Stat | p-value | Significant (p < 0.05) |")
+            lines.append("| Comparison | SDHD Wins | Baseline Wins | Chi-Square Stat | p-value | Significant (p < 0.05) |")
             lines.append("| :--- | :---: | :---: | :---: | :---: | :---: |")
             for comp, s in sig_data.items():
                 sig_str = "Yes (p < 0.05)" if s["statistically_significant"] else "No"

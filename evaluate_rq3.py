@@ -59,7 +59,7 @@ class RQ3RefinementEvaluator:
                     record_test_gen = self.test_gen_fn
 
                 report = pipeline.run(rec.prompt, rec.code, test_gen_fn=record_test_gen)
-                is_hallu = report["summary"]["total_hallucinations"] > 0
+                is_hallu = (report["summary"]["overall_status"] == "POTENTIAL_HALLUCINATION")
                 y_pred.append(is_hallu)
 
             metrics = calculate_metrics(y_true, y_pred)
@@ -204,7 +204,7 @@ class RQ3SensitivitySweeper:
                     record_test_gen = self.test_gen_fn
 
                 report = pipeline.run(rec.prompt, rec.code, test_gen_fn=record_test_gen)
-                y_pred.append(report["summary"]["total_hallucinations"] > 0)
+                y_pred.append(report["summary"]["overall_status"] == "POTENTIAL_HALLUCINATION")
 
             results[c] = calculate_metrics(y_true, y_pred)
 
@@ -235,7 +235,7 @@ class RQ3SensitivitySweeper:
                     record_test_gen = self.test_gen_fn
 
                 report = pipeline.run(rec.prompt, rec.code, test_gen_fn=record_test_gen)
-                y_pred.append(report["summary"]["total_hallucinations"] > 0)
+                y_pred.append(report["summary"]["overall_status"] == "POTENTIAL_HALLUCINATION")
 
             results[it] = calculate_metrics(y_true, y_pred)
 

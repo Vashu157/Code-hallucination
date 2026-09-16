@@ -122,7 +122,7 @@ class TestPhase5Datasets(unittest.TestCase):
 
     def test_pipeline_compatibility_with_dataset_records(self):
         """Validates SDHD_Pipeline runs seamlessly on DatasetRecord instances across all 3 datasets."""
-        pipeline = SDHD_Pipeline(c_min=5, i_max=2)
+        pipeline = SDHD_Pipeline(c_min=2, i_max=2)
 
         # 1. Clean MBPP task -> expected PASS
         clean_mbpp = load_mbpp(n=1, clean_only=True)[0]

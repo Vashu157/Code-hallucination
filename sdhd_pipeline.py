@@ -392,7 +392,13 @@ class SDHD_Pipeline:
             # total_hallucinations but must NOT insert new keys into the fixed 8-key breakdown dict.
 
 
-        overall_status = "PASS" if len(unique_hallucinations) == 0 else "POTENTIAL_HALLUCINATION"
+        dyn_status = dynamic_res.get("status", "UNKNOWN")
+        if len(unique_hallucinations) > 0 or dyn_status == "POTENTIAL_HALLUCINATION":
+            overall_status = "POTENTIAL_HALLUCINATION"
+        elif dyn_status == "ERROR" or static_failed:
+            overall_status = "ERROR"
+        else:
+            overall_status = "PASS"
 
         report["summary"] = {
             "overall_status": overall_status,

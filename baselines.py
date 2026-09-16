@@ -301,7 +301,8 @@ class SDHDBaselineAdapter(BaseBaseline):
     ) -> Dict[str, Any]:
         report = self.pipeline.run(prompt, code, test_gen_fn=test_gen_fn)
         total_found = report["summary"]["total_hallucinations"]
-        is_hallu = total_found > 0
+        overall_status = report["summary"]["overall_status"]
+        is_hallu = (overall_status == "POTENTIAL_HALLUCINATION")
         return {
             "is_hallucinated": is_hallu,
             "confidence": 1.0 if is_hallu else 0.0,
@@ -309,7 +310,7 @@ class SDHDBaselineAdapter(BaseBaseline):
             "details": {
                 "total_hallucinations": total_found,
                 "breakdown": report["summary"]["breakdown_by_type"],
-                "overall_status": report["summary"]["overall_status"]
+                "overall_status": overall_status
             }
         }
 
