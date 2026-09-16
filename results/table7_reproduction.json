@@ -1,0 +1,146 @@
+{
+  "categories": {
+    "DCH": {
+      "type_code": "DCH",
+      "category_name": "Data Compliance Hallucination (DCH)",
+      "gt_count": 1,
+      "caught": {
+        "SDHD": 1,
+        "CodeHalu": 0,
+        "SelfCheck": 0,
+        "SAC3": 0
+      },
+      "recall": {
+        "SDHD": 1.0,
+        "CodeHalu": 0.0,
+        "SelfCheck": 0.0,
+        "SAC3": 0.0
+      }
+    },
+    "SAH": {
+      "type_code": "SAH",
+      "category_name": "Structure Access Hallucination (SAH)",
+      "gt_count": 1,
+      "caught": {
+        "SDHD": 1,
+        "CodeHalu": 0,
+        "SelfCheck": 0,
+        "SAC3": 0
+      },
+      "recall": {
+        "SDHD": 1.0,
+        "CodeHalu": 0.0,
+        "SelfCheck": 0.0,
+        "SAC3": 0.0
+      }
+    },
+    "IH": {
+      "type_code": "IH",
+      "category_name": "Identity Hallucination (IH)",
+      "gt_count": 1,
+      "caught": {
+        "SDHD": 1,
+        "CodeHalu": 0,
+        "SelfCheck": 0,
+        "SAC3": 0
+      },
+      "recall": {
+        "SDHD": 1.0,
+        "CodeHalu": 0.0,
+        "SelfCheck": 0.0,
+        "SAC3": 0.0
+      }
+    },
+    "ESH": {
+      "type_code": "ESH",
+      "category_name": "External Source Hallucination (ESH)",
+      "gt_count": 1,
+      "caught": {
+        "SDHD": 1,
+        "CodeHalu": 0,
+        "SelfCheck": 0,
+        "SAC3": 0
+      },
+      "recall": {
+        "SDHD": 1.0,
+        "CodeHalu": 0.0,
+        "SelfCheck": 0.0,
+        "SAC3": 0.0
+      }
+    },
+    "PCH": {
+      "type_code": "PCH",
+      "category_name": "Physical Constraint Hallucination (PCH)",
+      "gt_count": 1,
+      "caught": {
+        "SDHD": 1,
+        "CodeHalu": 0,
+        "SelfCheck": 0,
+        "SAC3": 0
+      },
+      "recall": {
+        "SDHD": 1.0,
+        "CodeHalu": 0.0,
+        "SelfCheck": 0.0,
+        "SAC3": 0.0
+      }
+    },
+    "CBH": {
+      "type_code": "CBH",
+      "category_name": "Computational Boundary Hallucination (CBH)",
+      "gt_count": 1,
+      "caught": {
+        "SDHD": 1,
+        "CodeHalu": 0,
+        "SelfCheck": 0,
+        "SAC3": 0
+      },
+      "recall": {
+        "SDHD": 1.0,
+        "CodeHalu": 0.0,
+        "SelfCheck": 0.0,
+        "SAC3": 0.0
+      }
+    },
+    "LDH": {
+      "type_code": "LDH",
+      "category_name": "Logical Deviation Hallucination (LDH)",
+      "gt_count": 2,
+      "caught": {
+        "SDHD": 2,
+        "CodeHalu": 2,
+        "SelfCheck": 0,
+        "SAC3": 2
+      },
+      "recall": {
+        "SDHD": 1.0,
+        "CodeHalu": 1.0,
+        "SelfCheck": 0.0,
+        "SAC3": 1.0
+      }
+    },
+    "LFH": {
+      "type_code": "LFH",
+      "category_name": "Logical Failure Hallucination (LFH)",
+      "gt_count": 2,
+      "caught": {
+        "SDHD": 2,
+        "CodeHalu": 2,
+        "SelfCheck": 0,
+        "SAC3": 2
+      },
+      "recall": {
+        "SDHD": 1.0,
+        "CodeHalu": 1.0,
+        "SelfCheck": 0.0,
+        "SAC3": 1.0
+      }
+    }
+  },
+  "detector_names": [
+    "SDHD",
+    "CodeHalu",
+    "SelfCheck",
+    "SAC3"
+  ]
+}

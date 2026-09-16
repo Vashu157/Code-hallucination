@@ -691,6 +691,63 @@ class SSARenamer:
         elif isinstance(expr, ast.JoinedStr):
             for val in expr.values:
                 self._rename_expr_uses(val, lineno)
+        elif isinstance(expr, ast.IfExp):
+            self._rename_expr_uses(expr.test, lineno)
+            self._rename_expr_uses(expr.body, lineno)
+            self._rename_expr_uses(expr.orelse, lineno)
+        elif isinstance(expr, ast.Lambda):
+            lambda_params = [a.arg for a in expr.args.args + expr.args.posonlyargs + expr.args.kwonlyargs]
+            if expr.args.vararg:
+                lambda_params.append(expr.args.vararg.arg)
+            if expr.args.kwarg:
+                lambda_params.append(expr.args.kwarg.arg)
+            pushed_lambda = []
+            for p in lambda_params:
+                new_ver = self._new_version(p)
+                self.stacks.setdefault(p, []).append(new_ver)
+                pushed_lambda.append(p)
+            self._rename_expr_uses(expr.body, lineno)
+            for p in pushed_lambda:
+                if self.stacks.get(p):
+                    self.stacks[p].pop()
+        elif isinstance(expr, (ast.ListComp, ast.SetComp, ast.GeneratorExp)):
+            pushed_comp = []
+            for gen in expr.generators:
+                self._rename_expr_uses(gen.iter, lineno)
+                for var in _extract_defs_from_target(gen.target):
+                    new_ver = self._new_version(var)
+                    self.stacks.setdefault(var, []).append(new_ver)
+                    pushed_comp.append(var)
+                for if_clause in gen.ifs:
+                    self._rename_expr_uses(if_clause, lineno)
+            self._rename_expr_uses(expr.elt, lineno)
+            for var in pushed_comp:
+                if self.stacks.get(var):
+                    self.stacks[var].pop()
+        elif isinstance(expr, ast.DictComp):
+            pushed_comp = []
+            for gen in expr.generators:
+                self._rename_expr_uses(gen.iter, lineno)
+                for var in _extract_defs_from_target(gen.target):
+                    new_ver = self._new_version(var)
+                    self.stacks.setdefault(var, []).append(new_ver)
+                    pushed_comp.append(var)
+                for if_clause in gen.ifs:
+                    self._rename_expr_uses(if_clause, lineno)
+            self._rename_expr_uses(expr.key, lineno)
+            self._rename_expr_uses(expr.value, lineno)
+            for var in pushed_comp:
+                if self.stacks.get(var):
+                    self.stacks[var].pop()
+        elif isinstance(expr, ast.Slice):
+            if expr.lower:
+                self._rename_expr_uses(expr.lower, lineno)
+            if expr.upper:
+                self._rename_expr_uses(expr.upper, lineno)
+            if expr.step:
+                self._rename_expr_uses(expr.step, lineno)
+        elif isinstance(expr, ast.Starred):
+            self._rename_expr_uses(expr.value, lineno)
 
     def _check_maybe_undefined_in_stmt(self, stmt: ast.stmt) -> None:
         """Post-pass check to flag any load whose SSA version resolved to maybe_undefined."""
@@ -732,7 +789,7 @@ class SSARenamer:
                 self.var_types[new_ver] = inferred_type
                 if inferred_type == "dict" and "keys" in extra_info:
                     self.var_dicts[new_ver] = extra_info["keys"]
-                elif inferred_type in ("list", "tuple") and "length" in extra_info:
+                elif inferred_type in ("list", "tuple", "str") and "length" in extra_info:
                     self.var_seq_lengths[new_ver] = extra_info["length"]
         elif isinstance(target, (ast.Tuple, ast.List)):
             for elt in target.elts:
@@ -825,9 +882,10 @@ class SSATransformer:
         self.module_cfg: Optional[CFG] = None
         self.module_renamer: Optional[SSARenamer] = None
         self.all_renamers: List[SSARenamer] = []
+        self.known_globals: Set[str] = set()
 
     def transform(self, tree: ast.AST) -> List[SSARenamer]:
-        """Runs the two-phase SSA algorithm on functions and module statements."""
+        """Runs the two-phase SSA algorithm on functions, class methods, and module statements."""
         self.function_ssas.clear()
         self.all_renamers.clear()
 
@@ -839,35 +897,31 @@ class SSATransformer:
             elif isinstance(node, ast.ImportFrom):
                 for alias in node.names:
                     known_globals.add(alias.asname or alias.name)
-            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                 known_globals.add(node.name)
 
+        if isinstance(tree, ast.Module):
+            for stmt in tree.body:
+                if isinstance(stmt, ast.Assign):
+                    for target in stmt.targets:
+                        for var_name in _extract_defs_from_target(target):
+                            known_globals.add(var_name)
+                elif isinstance(stmt, ast.AnnAssign):
+                    for var_name in _extract_defs_from_target(stmt.target):
+                        known_globals.add(var_name)
+
+        self.known_globals = known_globals
+
         if isinstance(tree, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            cfg_builder = CFGBuilder()
-            cfg = cfg_builder.build(tree)
-            compute_dominators(cfg)
-            insert_phi_nodes(cfg)
-            renamer = SSARenamer(cfg, known_globals=known_globals)
-            for arg in tree.args.args + tree.args.posonlyargs + tree.args.kwonlyargs:
-                if arg.annotation and isinstance(arg.annotation, ast.Name):
-                    renamer.var_types[arg.arg] = arg.annotation.id
-            renamer.rename()
-            self.function_ssas[tree.name] = FunctionSSA(tree.name, cfg, renamer)
-            self.all_renamers.append(renamer)
+            self._transform_single_function(tree, known_globals)
         elif isinstance(tree, ast.Module):
             for stmt in tree.body:
                 if isinstance(stmt, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                    cfg_builder = CFGBuilder()
-                    cfg = cfg_builder.build(stmt)
-                    compute_dominators(cfg)
-                    insert_phi_nodes(cfg)
-                    renamer = SSARenamer(cfg, known_globals=known_globals)
-                    for arg in stmt.args.args + stmt.args.posonlyargs + stmt.args.kwonlyargs:
-                        if arg.annotation and isinstance(arg.annotation, ast.Name):
-                            renamer.var_types[arg.arg] = arg.annotation.id
-                    renamer.rename()
-                    self.function_ssas[stmt.name] = FunctionSSA(stmt.name, cfg, renamer)
-                    self.all_renamers.append(renamer)
+                    self._transform_single_function(stmt, known_globals)
+                elif isinstance(stmt, ast.ClassDef):
+                    for item in stmt.body:
+                        if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                            self._transform_single_function(item, known_globals, class_name=stmt.name)
 
             cfg_builder = CFGBuilder()
             self.module_cfg = cfg_builder.build(tree)
@@ -878,6 +932,27 @@ class SSATransformer:
             self.all_renamers.append(self.module_renamer)
 
         return self.all_renamers
+
+    def _transform_single_function(
+        self,
+        func_node: Union[ast.FunctionDef, ast.AsyncFunctionDef],
+        known_globals: Set[str],
+        class_name: Optional[str] = None
+    ) -> None:
+        """Transforms a single function or method into SSA form."""
+        cfg_builder = CFGBuilder()
+        cfg = cfg_builder.build(func_node)
+        compute_dominators(cfg)
+        insert_phi_nodes(cfg)
+        renamer = SSARenamer(cfg, known_globals=known_globals)
+        for arg in func_node.args.args + func_node.args.posonlyargs + func_node.args.kwonlyargs:
+            if arg.annotation and isinstance(arg.annotation, ast.Name):
+                renamer.var_types[arg.arg] = arg.annotation.id
+        renamer.rename()
+        qual_name = f"{class_name}.{func_node.name}" if class_name else func_node.name
+        self.function_ssas[qual_name] = FunctionSSA(qual_name, cfg, renamer)
+        self.function_ssas[func_node.name] = FunctionSSA(func_node.name, cfg, renamer)
+        self.all_renamers.append(renamer)
 
 
 class CodeAnalyzer:
@@ -1069,6 +1144,10 @@ class StaticDetector(ast.NodeVisitor):
         self._check_cbh_recursion(node)
         self.generic_visit(node)
 
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
+        self.defined_names.add(node.name)
+        self.generic_visit(node)
+
     def visit_Assign(self, node: ast.Assign) -> None:
         for target in node.targets:
             if isinstance(target, ast.Name):
@@ -1142,7 +1221,15 @@ class StaticDetector(ast.NodeVisitor):
     def visit_Call(self, node: ast.Call) -> None:
         is_esh = False
         if isinstance(node.func, ast.Name):
-            if node.func.id not in self.defined_names:
+            func_type = self._get_inferred_type(node.func)
+            if func_type in ("int", "float", "bool"):
+                self.errors.append({
+                    'error_type': 'Data Compliance Hallucination (DCH)',
+                    'variable_name': f"{node.func.id}()",
+                    'line_number': node.lineno,
+                    'detail': f"Cannot call non-callable object '{node.func.id}' of primitive type '{func_type}'."
+                })
+            elif node.func.id not in self.defined_names:
                 self.errors.append({
                     'error_type': 'External Source Hallucination (ESH)',
                     'variable_name': node.func.id,
@@ -1207,16 +1294,33 @@ class StaticDetector(ast.NodeVisitor):
             self.visit(kw)
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
+        if isinstance(node.slice, ast.Slice):
+            if isinstance(node.slice.step, ast.Constant) and node.slice.step.value == 0:
+                self.errors.append({
+                    'error_type': 'Structure Access Hallucination (SAH)',
+                    'variable_name': 'slice step 0',
+                    'line_number': node.lineno,
+                    'detail': "Slice step cannot be zero."
+                })
+
         target_len = None
         if isinstance(node.value, (ast.List, ast.Tuple)):
             target_len = len(node.value.elts)
+        elif isinstance(node.value, ast.Constant) and isinstance(node.value.value, str):
+            target_len = len(node.value.value)
         elif isinstance(node.value, ast.Name):
             if node.value.id in self.var_seq_lengths:
                 target_len = self.var_seq_lengths[node.value.id]
-            elif node.value.id in self.var_values:
+            else:
+                base_name = self._get_base_var(node.value.id)
+                if base_name in self.var_seq_lengths:
+                    target_len = self.var_seq_lengths[base_name]
+            if target_len is None and node.value.id in self.var_values:
                 val_node = self.var_values[node.value.id]
                 if isinstance(val_node, (ast.List, ast.Tuple)):
                     target_len = len(val_node.elts)
+                elif isinstance(val_node, ast.Constant) and isinstance(val_node.value, str):
+                    target_len = len(val_node.value)
 
         if target_len is not None and isinstance(node.slice, ast.Constant):
             if isinstance(node.slice.value, int):
@@ -1229,8 +1333,8 @@ class StaticDetector(ast.NodeVisitor):
                     })
 
         if isinstance(node.value, ast.Name) and isinstance(node.slice, ast.Constant):
-            if node.value.id in self.var_dicts:
-                known_keys = self.var_dicts[node.value.id]
+            known_keys = self.var_dicts.get(node.value.id) or self.var_dicts.get(self._get_base_var(node.value.id))
+            if known_keys is not None:
                 key_val = node.slice.value
                 if key_val not in known_keys:
                     self.errors.append({
@@ -1411,6 +1515,8 @@ def detect_hallucinations(source_code: str) -> List[Dict[str, Any]]:
     renamers = analyzer.transform_ssa()  # mutates analyzer.ast_tree in-place
 
     detector = StaticDetector(renamers=renamers, function_ssas=analyzer.ssa_transformer.function_ssas)
+    for g in analyzer.ssa_transformer.known_globals:
+        detector.defined_names.add(g)
     detector.visit(original_tree)  # walk the un-mutated original tree
 
     seen = set()

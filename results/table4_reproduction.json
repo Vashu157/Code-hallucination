@@ -1,0 +1,38 @@
+{
+  "SDHD": {
+    "method": "SDHD",
+    "total_clean": 10,
+    "FP": 1,
+    "TN": 9,
+    "FPR": 0.1,
+    "Specificity": 0.9,
+    "accuracy": 0.9
+  },
+  "CodeHalu": {
+    "method": "CodeHalu",
+    "total_clean": 10,
+    "FP": 0,
+    "TN": 10,
+    "FPR": 0.0,
+    "Specificity": 1.0,
+    "accuracy": 1.0
+  },
+  "SelfCheck": {
+    "method": "SelfCheck",
+    "total_clean": 10,
+    "FP": 0,
+    "TN": 10,
+    "FPR": 0.0,
+    "Specificity": 1.0,
+    "accuracy": 1.0
+  },
+  "SAC3": {
+    "method": "SAC3",
+    "total_clean": 10,
+    "FP": 10,
+    "TN": 0,
+    "FPR": 1.0,
+    "Specificity": 0.0,
+    "accuracy": 0.0
+  }
+}

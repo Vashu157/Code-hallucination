@@ -1,17 +1,28 @@
 """
 baselines.py - Baseline Reproductions & Benchmark Evaluation Tools (Section IV-C1)
 ===================================================================================
-Implements the three comparison baselines from Section IV-C1 of the SDHD paper:
-1. CodeHalu (Tian et al. [17]): Execution-based dynamic verification without static analysis or iterative feedback loops.
-2. SelfCheck (Li et al. [22]): Multi-sample consistency checking measuring agreement across k completions.
-3. SAC3 (Manakul et al. [23]): Semantic Agreement check using embedding cosine similarity between requirement and code.
+Implements the full set of comparison baselines from Section IV-C1 of the SDHD paper:
+1. PyLint: Traditional static analysis linter mapped to 8-type taxonomy.
+2. Flake8: Traditional static style and syntax linter mapped to 8-type taxonomy.
+3. CodeEval: Pure dynamic execution baseline (runs test cases once without refinement).
+4. CodeHalu (Tian et al. [17]): Dynamic execution-based verification baseline.
+5. SelfDebug (Chen et al. [6]): LLM self-reflection / prompting debugger.
+6. SelfCheck (Li et al. [22]): Multi-sample consistency checking across completions.
+7. SAC3 (Manakul et al. [23]): Semantic Agreement check using embedding/token cosine similarity.
+8. SDHD Adapter: Unified adapter wrapping the complete static-dynamic pipeline.
 
-Also provides standard Precision, Recall, F1, and FPR evaluation utilities.
+Also provides standard Precision, Recall, F1, Accuracy, and FPR evaluation utilities,
+and a side-by-side record runner.
 """
 
 import ast
+import json
 import math
+import os
 import re
+import subprocess
+import sys
+import tempfile
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, Union, Callable
 
@@ -31,7 +42,7 @@ class BaseBaseline(ABC):
     name: str = "BaseBaseline"
 
     @abstractmethod
-    def detect(self, prompt: str, code: str, **kwargs) -> Dict[str, Any]:
+    def detect(self, prompt: str, code: str, tests: Optional[List[Dict[str, Any]]] = None, **kwargs) -> Dict[str, Any]:
         """
         Runs hallucination detection on the given prompt and code.
 
@@ -41,6 +52,7 @@ class BaseBaseline(ABC):
                 "is_hallucinated": bool,
                 "confidence": float,
                 "method": str,
+                "detections": List[Dict[str, Any]],
                 "details": Dict[str, Any]
             }
         """
@@ -48,7 +60,220 @@ class BaseBaseline(ABC):
 
 
 # =====================================================================
-# 1. CodeHalu Baseline (Execution-based dynamic verification) [Tian et al., 2024]
+# 1. PyLint Baseline (Traditional Static Analysis Linter)
+# =====================================================================
+
+class PyLintBaseline(BaseBaseline):
+    """
+    PyLint Baseline (Section IV-C1).
+    Runs pylint with --errors-only on the code string, mapping errors into
+    the standardized 8-type hallucination taxonomy.
+    """
+    name: str = "PyLint"
+
+    # Mapping PyLint message symbols / IDs to SDHD 8-type taxonomy
+    PYLINT_MAP = {
+        "E0602": "Identity Hallucination (IH)",               # undefined-variable
+        "E0601": "Identity Hallucination (IH)",               # used-before-assignment
+        "E0401": "External Source Hallucination (ESH)",         # import-error
+        "E1101": "Structure Access Hallucination (SAH)",        # no-member
+        "E1126": "Structure Access Hallucination (SAH)",        # invalid-sequence-index
+        "E1127": "Structure Access Hallucination (SAH)",        # slice-index-not-an-integer
+        "E1136": "Structure Access Hallucination (SAH)",        # unsubscriptable-object
+        "E1130": "Data Compliance Hallucination (DCH)",         # invalid-unary-operand-type
+        "E1131": "Data Compliance Hallucination (DCH)",         # unsupported-binary-operation
+        "E1120": "Data Compliance Hallucination (DCH)",         # no-value-for-parameter
+        "E1121": "Data Compliance Hallucination (DCH)",         # too-many-function-args
+        "E0001": "Logical Failure Hallucination (LFH)",         # syntax-error
+    }
+
+    def detect(self, prompt: str, code: str, tests: Optional[List[Dict[str, Any]]] = None, **kwargs) -> Dict[str, Any]:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8') as f:
+            f.write(code)
+            temp_path = f.name
+
+        try:
+            cmd = [sys.executable, "-m", "pylint", temp_path, "--errors-only", "--output-format=json"]
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            raw_out = proc.stdout.strip()
+            records = json.loads(raw_out) if raw_out else []
+        except Exception:
+            records = []
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+        detections = []
+        for r in records:
+            msg_id = r.get("message-id", "")
+            symbol = r.get("symbol", "")
+            mapped_type = self.PYLINT_MAP.get(msg_id, "Logical Failure Hallucination (LFH)")
+            detections.append({
+                "error_type": mapped_type,
+                "variable_name": symbol or r.get("obj", "unknown"),
+                "line_number": r.get("line"),
+                "detail": r.get("message", "")
+            })
+
+        is_hallu = len(detections) > 0
+        return {
+            "is_hallucinated": is_hallu,
+            "confidence": 1.0 if is_hallu else 0.0,
+            "method": self.name,
+            "detections": detections,
+            "details": {"error_count": len(detections), "raw_pylint_records": records}
+        }
+
+
+# =====================================================================
+# 2. Flake8 Baseline (Traditional Static Linter)
+# =====================================================================
+
+class Flake8Baseline(BaseBaseline):
+    """
+    Flake8 Baseline (Section IV-C1).
+    Runs flake8 on the code string, mapping error codes into
+    the standardized 8-type hallucination taxonomy.
+    """
+    name: str = "Flake8"
+
+    FLAKE8_MAP = {
+        "F821": "Identity Hallucination (IH)",          # undefined name
+        "F822": "Identity Hallucination (IH)",          # undefined name in __all__
+        "F823": "Identity Hallucination (IH)",          # local variable referenced before assignment
+        "E999": "Logical Failure Hallucination (LFH)",    # SyntaxError
+        "F706": "Logical Failure Hallucination (LFH)",    # return outside function
+    }
+
+    def detect(self, prompt: str, code: str, tests: Optional[List[Dict[str, Any]]] = None, **kwargs) -> Dict[str, Any]:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False, encoding='utf-8') as f:
+            f.write(code)
+            temp_path = f.name
+
+        try:
+            cmd = [sys.executable, "-m", "flake8", temp_path, "--select=E9,F", "--format=%(code)s:%(row)d:%(col)d:%(text)s"]
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            lines = proc.stdout.strip().splitlines()
+        except Exception:
+            lines = []
+        finally:
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+
+        detections = []
+        for line in lines:
+            parts = line.strip().split(":", 3)
+            if len(parts) >= 4:
+                code_id, row, col, text = parts[0], parts[1], parts[2], parts[3]
+                mapped_type = self.FLAKE8_MAP.get(code_id, "Logical Failure Hallucination (LFH)")
+                m = re.search(r"'(.*?)'", text)
+                var_name = m.group(1) if m else code_id
+                detections.append({
+                    "error_type": mapped_type,
+                    "variable_name": var_name,
+                    "line_number": int(row) if row.isdigit() else None,
+                    "detail": text.strip()
+                })
+
+        is_hallu = len(detections) > 0
+        return {
+            "is_hallucinated": is_hallu,
+            "confidence": 1.0 if is_hallu else 0.0,
+            "method": self.name,
+            "detections": detections,
+            "details": {"error_count": len(detections)}
+        }
+
+
+# =====================================================================
+# 3. CodeEval Baseline (Pure Dynamic Test Execution)
+# =====================================================================
+
+class CodeEvalBaseline(BaseBaseline):
+    """
+    Code-Eval Baseline (Section IV-C1).
+    Pure dynamic execution baseline: executes code against provided test cases
+    in a sandboxed subprocess without static analysis or iterative refinement.
+    """
+    name: str = "CodeEval"
+
+    def __init__(self, timeout: int = 5):
+        self.timeout = timeout
+
+    def detect(
+        self,
+        prompt: str,
+        code: str,
+        tests: Optional[List[Dict[str, Any]]] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        test_cases = tests or []
+        if not test_cases:
+            try:
+                ast.parse(code)
+                return {
+                    "is_hallucinated": False,
+                    "confidence": 0.5,
+                    "method": self.name,
+                    "detections": [],
+                    "details": {"reason": "No test cases provided; code parses syntactically."}
+                }
+            except Exception as e:
+                return {
+                    "is_hallucinated": True,
+                    "confidence": 1.0,
+                    "method": self.name,
+                    "detections": [{"error_type": "Logical Failure Hallucination (LFH)", "variable_name": "syntax", "line_number": None, "detail": str(e)}],
+                    "details": {"syntax_error": str(e)}
+                }
+
+        report = execute_dynamic_tests(code, test_cases, timeout=self.timeout)
+        failed = report.get("failed_tests", 0)
+        crashed = report.get("crashed_tests", 0)
+        is_error = report.get("status") == "error"
+
+        detections = []
+        if is_error:
+            detections.append({
+                "error_type": "Logical Failure Hallucination (LFH)",
+                "variable_name": "execution_environment",
+                "line_number": None,
+                "detail": report.get("message", "Execution error")
+            })
+
+        for r in report.get("results", []):
+            if r.get("status") == "failed":
+                detections.append({
+                    "error_type": "Logical Deviation Hallucination (LDH)",
+                    "variable_name": f"test_index_{r.get('test_index', 0)}",
+                    "line_number": None,
+                    "detail": f"Input: {r.get('input')} | Expected: {r.get('expected')} | Actual: {r.get('actual')}"
+                })
+            elif r.get("status") == "crashed":
+                detections.append({
+                    "error_type": "Logical Failure Hallucination (LFH)",
+                    "variable_name": f"test_index_{r.get('test_index', 0)}",
+                    "line_number": None,
+                    "detail": f"Input: {r.get('input')} | Error: {r.get('error')}"
+                })
+
+        is_hallu = (failed > 0 or crashed > 0 or is_error)
+        return {
+            "is_hallucinated": is_hallu,
+            "confidence": 1.0 if is_hallu else 0.0,
+            "method": self.name,
+            "detections": detections,
+            "details": {
+                "passed_tests": report.get("passed_tests", 0),
+                "failed_tests": failed,
+                "crashed_tests": crashed,
+                "execution_status": report.get("status")
+            }
+        }
+
+
+# =====================================================================
+# 4. CodeHalu Baseline (Tian et al. [17])
 # =====================================================================
 
 class CodeHaluBaseline(BaseBaseline):
@@ -71,7 +296,6 @@ class CodeHaluBaseline(BaseBaseline):
         test_gen_fn: Optional[Callable] = None,
         **kwargs
     ) -> Dict[str, Any]:
-        # Use provided tests or generate one-pass tests
         test_cases = tests or []
         if not test_cases:
             if test_gen_fn is not None:
@@ -82,13 +306,13 @@ class CodeHaluBaseline(BaseBaseline):
                 test_cases = generate_test_cases_from_requirements(reqs, code, feedback=None, count=self.test_count)
 
         if not test_cases:
-            # Cannot execute tests -> fallback to syntax check
             try:
                 ast.parse(code)
                 return {
                     "is_hallucinated": False,
                     "confidence": 0.5,
                     "method": self.name,
+                    "detections": [],
                     "details": {"reason": "No test cases available, parsed cleanly."}
                 }
             except Exception as e:
@@ -96,6 +320,7 @@ class CodeHaluBaseline(BaseBaseline):
                     "is_hallucinated": True,
                     "confidence": 1.0,
                     "method": self.name,
+                    "detections": [{"error_type": "Logical Failure Hallucination (LFH)", "variable_name": "syntax", "line_number": None, "detail": str(e)}],
                     "details": {"syntax_error": str(e)}
                 }
 
@@ -104,13 +329,29 @@ class CodeHaluBaseline(BaseBaseline):
         crashed = report.get("crashed_tests", 0)
         is_error = report.get("status") == "error"
 
-        is_hallu = (failed > 0 or crashed > 0 or is_error)
-        conf = 1.0 if is_hallu else 0.0
+        detections = []
+        for r in report.get("results", []):
+            if r.get("status") == "failed":
+                detections.append({
+                    "error_type": "Logical Deviation Hallucination (LDH)",
+                    "variable_name": f"test_index_{r.get('test_index', 0)}",
+                    "line_number": None,
+                    "detail": f"Input: {r.get('input')} | Expected: {r.get('expected')} | Actual: {r.get('actual')}"
+                })
+            elif r.get("status") == "crashed":
+                detections.append({
+                    "error_type": "Logical Failure Hallucination (LFH)",
+                    "variable_name": f"test_index_{r.get('test_index', 0)}",
+                    "line_number": None,
+                    "detail": f"Input: {r.get('input')} | Error: {r.get('error')}"
+                })
 
+        is_hallu = (failed > 0 or crashed > 0 or is_error)
         return {
             "is_hallucinated": is_hallu,
-            "confidence": conf,
+            "confidence": 1.0 if is_hallu else 0.0,
             "method": self.name,
+            "detections": detections,
             "details": {
                 "passed_tests": report.get("passed_tests", 0),
                 "failed_tests": failed,
@@ -121,7 +362,82 @@ class CodeHaluBaseline(BaseBaseline):
 
 
 # =====================================================================
-# 2. SelfCheck Baseline (Sample-consistency agreement) [Li et al., 2023]
+# 5. SelfDebug Baseline (Chen et al. [6])
+# =====================================================================
+
+class SelfDebugBaseline(BaseBaseline):
+    """
+    Self-Debug Baseline (Chen et al. [6]).
+    Prompts the LLM directly to analyze the requirement and code, asking it to
+    identify and classify any hallucinations or bugs.
+    """
+    name: str = "SelfDebug"
+
+    def __init__(self, client: Optional[Any] = None, model: str = "gemini-2.5-flash", mock_fn: Optional[Callable] = None):
+        self.client = client
+        self.model = model
+        self.mock_fn = mock_fn
+
+    def detect(self, prompt: str, code: str, tests: Optional[List[Dict[str, Any]]] = None, **kwargs) -> Dict[str, Any]:
+        if self.mock_fn is not None:
+            return self.mock_fn(prompt, code)
+
+        try:
+            from google import genai
+            api_key = os.environ.get("GOOGLE_API_KEY", "AIzaSyA4A4AiOWNsThw9kvxwOXta3iCZKTeqciE")
+            c = self.client or genai.Client(api_key=api_key)
+            system_prompt = (
+                "You are an expert code auditor. Analyze the following user requirement and Python code "
+                "to determine if it contains any hallucinations, logical bugs, or undefined identifiers.\n\n"
+                f"Requirement:\n{prompt}\n\nCode:\n{code}\n\n"
+                "Respond STRICTLY with a JSON object:\n"
+                '{"is_hallucinated": bool, "confidence": float, "error_type": string or null, "explanation": string}'
+            )
+            resp = c.models.generate_content(
+                model=self.model,
+                contents=system_prompt,
+                config={"response_mime_type": "application/json"}
+            )
+            data = json.loads(resp.text)
+            is_hallu = bool(data.get("is_hallucinated", False))
+            err_type = data.get("error_type")
+            detections = []
+            if is_hallu and err_type:
+                detections.append({
+                    "error_type": err_type,
+                    "variable_name": "self_debug",
+                    "line_number": None,
+                    "detail": data.get("explanation", "")
+                })
+            return {
+                "is_hallucinated": is_hallu,
+                "confidence": float(data.get("confidence", 1.0 if is_hallu else 0.0)),
+                "method": self.name,
+                "detections": detections,
+                "details": data
+            }
+        except Exception as e:
+            try:
+                ast.parse(code)
+                return {
+                    "is_hallucinated": False,
+                    "confidence": 0.5,
+                    "method": self.name,
+                    "detections": [],
+                    "details": {"fallback": "Syntax parsed cleanly, LLM call skipped or failed", "error": str(e)}
+                }
+            except Exception as syntax_err:
+                return {
+                    "is_hallucinated": True,
+                    "confidence": 1.0,
+                    "method": self.name,
+                    "detections": [{"error_type": "Logical Failure Hallucination (LFH)", "variable_name": "syntax", "line_number": None, "detail": str(syntax_err)}],
+                    "details": {"syntax_error": str(syntax_err)}
+                }
+
+
+# =====================================================================
+# 6. SelfCheck Baseline (Sample-consistency agreement) [Li et al., 2023]
 # =====================================================================
 
 class SelfCheckBaseline(BaseBaseline):
@@ -137,7 +453,6 @@ class SelfCheckBaseline(BaseBaseline):
         self.threshold = threshold
 
     def _extract_ast_signature(self, code_str: str) -> set:
-        """Extracts structural AST feature tokens for consistency comparison."""
         try:
             tree = ast.parse(code_str)
             features = set()
@@ -157,7 +472,6 @@ class SelfCheckBaseline(BaseBaseline):
             return {"<SYNTAX_ERROR>"}
 
     def _jaccard_similarity(self, s1: set, s2: set) -> float:
-        """Computes Jaccard similarity between two feature sets."""
         if not s1 or not s2:
             return 0.0
         intersection = len(s1.intersection(s2))
@@ -168,22 +482,21 @@ class SelfCheckBaseline(BaseBaseline):
         self,
         prompt: str,
         code: str,
+        tests: Optional[List[Dict[str, Any]]] = None,
         sample_completions: Optional[List[str]] = None,
         **kwargs
     ) -> Dict[str, Any]:
-        # If candidate samples are provided, measure inter-sample agreement
         samples = sample_completions or []
         if not samples:
-            # Default self-consistency proxy: check AST syntax validity and structural consistency
             code_features = self._extract_ast_signature(code)
             if "<SYNTAX_ERROR>" in code_features:
                 return {
                     "is_hallucinated": True,
                     "confidence": 1.0,
                     "method": self.name,
+                    "detections": [{"error_type": "Logical Failure Hallucination (LFH)", "variable_name": "syntax", "line_number": None, "detail": "Syntax error in completion"}],
                     "details": {"agreement_score": 0.0, "reason": "Syntax error in completion."}
                 }
-            # High default consistency if self-contained
             agreement_score = 0.85
         else:
             code_features = self._extract_ast_signature(code)
@@ -191,12 +504,19 @@ class SelfCheckBaseline(BaseBaseline):
             agreement_score = sum(scores) / len(scores) if scores else 0.0
 
         is_hallu = agreement_score < self.threshold
+        detections = []
+        if is_hallu:
+            detections.append({
+                "error_type": "Logical Deviation Hallucination (LDH)",
+                "variable_name": "completion_consistency",
+                "line_number": None,
+                "detail": f"Inter-sample consistency {agreement_score:.2f} < threshold {self.threshold:.2f}"
+            })
         return {
             "is_hallucinated": is_hallu,
-            # BUG-19 FIX: Clamp confidence to [0.0, 1.0] to guard against future
-            # agreement_score implementations that could return values outside [0, 1].
             "confidence": round(max(0.0, min(1.0, 1.0 - agreement_score)), 3),
             "method": self.name,
+            "detections": detections,
             "details": {
                 "agreement_score": round(agreement_score, 3),
                 "threshold": self.threshold,
@@ -205,16 +525,15 @@ class SelfCheckBaseline(BaseBaseline):
         }
 
 
-
 # =====================================================================
-# 3. SAC3 Baseline (Semantic Agreement via Embedding Similarity) [Manakul et al., 2023]
+# 7. SAC3 Baseline (Semantic Agreement via Cosine Distance) [Manakul et al., 2023]
 # =====================================================================
 
 class SAC3Baseline(BaseBaseline):
     """
     SAC3 Baseline (Manakul et al. [23]).
-    Measures semantic agreement / cosine similarity between the natural language requirement
-    and the code's semantic signature. Flags low-similarity completions.
+    Measures semantic agreement between the natural language requirement
+    and the code's semantic signature.
     """
     name: str = "SAC3"
 
@@ -222,11 +541,9 @@ class SAC3Baseline(BaseBaseline):
         self.threshold = threshold
 
     def _tokenize(self, text: str) -> List[str]:
-        """Normalizes and extracts alphanumeric semantic tokens."""
         return re.findall(r'[a-zA-Z_]\w*', text.lower())
 
     def _token_cosine_similarity(self, text1: str, text2: str) -> float:
-        """Computes TF-IDF / frequency cosine similarity between two text strings."""
         tokens1 = self._tokenize(text1)
         tokens2 = self._tokenize(text2)
 
@@ -250,27 +567,34 @@ class SAC3Baseline(BaseBaseline):
             return 0.0
         return dot / (norm1 * norm2)
 
-    def detect(self, prompt: str, code: str, **kwargs) -> Dict[str, Any]:
-        # Check syntax first
+    def detect(self, prompt: str, code: str, tests: Optional[List[Dict[str, Any]]] = None, **kwargs) -> Dict[str, Any]:
         try:
             ast.parse(code)
-        except Exception:
+        except Exception as e:
             return {
                 "is_hallucinated": True,
                 "confidence": 1.0,
                 "method": self.name,
+                "detections": [{"error_type": "Logical Failure Hallucination (LFH)", "variable_name": "syntax", "line_number": None, "detail": str(e)}],
                 "details": {"semantic_similarity": 0.0, "reason": "Syntax error in code."}
             }
 
         sim = self._token_cosine_similarity(prompt, code)
         is_hallu = sim < self.threshold
+        detections = []
+        if is_hallu:
+            detections.append({
+                "error_type": "Logical Deviation Hallucination (LDH)",
+                "variable_name": "semantic_similarity",
+                "line_number": None,
+                "detail": f"Cosine similarity {sim:.2f} < threshold {self.threshold:.2f}"
+            })
 
         return {
             "is_hallucinated": is_hallu,
-            # BUG-19 FIX: Clamp confidence to [0.0, 1.0] — if similarity measure is ever changed
-            # to use signed embeddings, 1.0 - sim could exceed 1.0 silently.
             "confidence": round(max(0.0, min(1.0, 1.0 - sim)), 3),
             "method": self.name,
+            "detections": detections,
             "details": {
                 "semantic_similarity": round(sim, 3),
                 "threshold": self.threshold
@@ -278,9 +602,8 @@ class SAC3Baseline(BaseBaseline):
         }
 
 
-
 # =====================================================================
-# 4. SDHD Pipeline Adapter
+# 8. SDHD Pipeline Adapter
 # =====================================================================
 
 class SDHDBaselineAdapter(BaseBaseline):
@@ -296,23 +619,69 @@ class SDHDBaselineAdapter(BaseBaseline):
         self,
         prompt: str,
         code: str,
+        tests: Optional[List[Dict[str, Any]]] = None,
         test_gen_fn: Optional[Callable] = None,
         **kwargs
     ) -> Dict[str, Any]:
         report = self.pipeline.run(prompt, code, test_gen_fn=test_gen_fn)
         total_found = report["summary"]["total_hallucinations"]
         overall_status = report["summary"]["overall_status"]
-        is_hallu = (overall_status == "POTENTIAL_HALLUCINATION")
+        is_hallu = (overall_status == "POTENTIAL_HALLUCINATION" or total_found > 0)
         return {
             "is_hallucinated": is_hallu,
             "confidence": 1.0 if is_hallu else 0.0,
             "method": self.name,
+            "detections": report.get("hallucinations", []),
             "details": {
                 "total_hallucinations": total_found,
                 "breakdown": report["summary"]["breakdown_by_type"],
                 "overall_status": overall_status
             }
         }
+
+
+# =====================================================================
+# Multi-Baseline Record Runner (Definition of Done)
+# =====================================================================
+
+def run_all_baselines_on_record(
+    record: Any,
+    self_debug_mock_fn: Optional[Callable] = None
+) -> Dict[str, Dict[str, Any]]:
+    """
+    Takes a single record (DatasetRecord, BenchmarkRecord, or dict) and executes
+    all 5 paper comparison baselines (PyLint, Flake8, CodeEval, CodeHalu, SelfDebug)
+    plus SelfCheck, SAC3, and SDHD side-by-side, returning comparable output dicts.
+    """
+    prompt = getattr(record, "prompt", getattr(record, "requirement_text", record.get("prompt", "") if isinstance(record, dict) else ""))
+    code = getattr(record, "code", record.get("code", "") if isinstance(record, dict) else "")
+    tests = getattr(record, "tests", getattr(record, "test_cases", record.get("tests", []) if isinstance(record, dict) else []))
+
+    baselines: List[BaseBaseline] = [
+        SDHDBaselineAdapter(),
+        PyLintBaseline(),
+        Flake8Baseline(),
+        CodeEvalBaseline(),
+        CodeHaluBaseline(),
+        SelfDebugBaseline(mock_fn=self_debug_mock_fn),
+        SelfCheckBaseline(),
+        SAC3Baseline(),
+    ]
+
+    results: Dict[str, Dict[str, Any]] = {}
+    for b in baselines:
+        try:
+            res = b.detect(prompt=prompt, code=code, tests=tests)
+            results[b.name] = res
+        except Exception as e:
+            results[b.name] = {
+                "is_hallucinated": False,
+                "confidence": 0.0,
+                "method": b.name,
+                "detections": [],
+                "details": {"error": str(e)}
+            }
+    return results
 
 
 # =====================================================================
@@ -355,9 +724,6 @@ def evaluate_detector(
     dataset: List[DatasetRecord],
     test_gen_fn: Optional[Callable] = None
 ) -> Dict[str, Any]:
-    """
-    Evaluates a given detector against a benchmark dataset of DatasetRecord objects.
-    """
     y_true: List[bool] = []
     y_pred: List[bool] = []
     per_record: List[Dict[str, Any]] = []
@@ -365,9 +731,6 @@ def evaluate_detector(
     for rec in dataset:
         y_true.append(rec.is_hallucinated)
 
-        # BUG-17 FIX: Capture rec.tests by value using a default argument to avoid the classic
-        # Python closure-captures-loop-variable bug. Without this, all _gen closures share the
-        # same `rec` reference which points to the last record after loop completion.
         record_test_gen = None
         if rec.tests:
             def _gen(r, c, f, cnt, _tests=rec.tests):
@@ -376,9 +739,6 @@ def evaluate_detector(
         elif test_gen_fn is not None:
             record_test_gen = test_gen_fn
 
-        # BUG-18 FIX: Wrap detector.detect() in try/except. Without this, any exception mid-loop
-        # would abort with y_true and y_pred at different lengths. zip() would silently truncate
-        # metrics to the shorter list, producing wrong Precision/Recall/F1 without any error.
         try:
             res = detector.detect(
                 prompt=rec.prompt,
@@ -388,8 +748,8 @@ def evaluate_detector(
             )
             pred = bool(res.get("is_hallucinated", False))
         except Exception as e:
-            pred = False  # Conservative: treat detect errors as non-hallucination
-            res = {"details": {"error": str(e)}, "is_hallucinated": False}
+            pred = False
+            res = {"details": {"error": str(e)}, "is_hallucinated": False, "detections": []}
 
         y_pred.append(pred)
 
@@ -400,10 +760,8 @@ def evaluate_detector(
             "details": res.get("details", {})
         })
 
-    # BUG-18 FIX: Explicit length guard before metrics computation.
     assert len(y_true) == len(y_pred), (
-        f"[evaluate_detector] Internal error: y_true length ({len(y_true)}) != "
-        f"y_pred length ({len(y_pred)}). This indicates a logic bug in the loop."
+        f"[evaluate_detector] Internal error: y_true length ({len(y_true)}) != y_pred length ({len(y_pred)})."
     )
 
     metrics = calculate_metrics(y_true, y_pred)
@@ -414,14 +772,12 @@ def evaluate_detector(
     }
 
 
-
 def evaluate_all_baselines(dataset: List[DatasetRecord]) -> Dict[str, Dict[str, Any]]:
-    """
-    Runs all 4 detectors (SDHD, CodeHalu, SelfCheck, SAC3) across a dataset.
-    Returns comparison dictionary mirroring Table III of the paper.
-    """
     detectors: List[BaseBaseline] = [
         SDHDBaselineAdapter(),
+        PyLintBaseline(),
+        Flake8Baseline(),
+        CodeEvalBaseline(),
         CodeHaluBaseline(),
         SelfCheckBaseline(),
         SAC3Baseline()
@@ -435,16 +791,11 @@ def evaluate_all_baselines(dataset: List[DatasetRecord]) -> Dict[str, Dict[str, 
     return results
 
 
-# --- Standalone Demo Execution ---
 if __name__ == "__main__":
+    from dataset_loaders import load_all_datasets
     all_benchmarks = load_all_datasets()
-    combined_pool = (
-        all_benchmarks["MBPP"][:3] +
-        all_benchmarks["CodeHaluEval"][:3] +
-        all_benchmarks["HalluCode"][:3]
-    )
-
-    print("=== Table III Baseline Comparison (SDHD vs Baselines) ===")
-    comp_results = evaluate_all_baselines(combined_pool)
-    for method, metrics in comp_results.items():
-        print(f"{method:<12} | Precision: {metrics['Precision']:.3f} | Recall: {metrics['Recall']:.3f} | F1: {metrics['F1']:.3f} | Acc: {metrics['Accuracy']:.3f} | FPR: {metrics['FPR']:.3f}")
+    sample = all_benchmarks["CodeHaluEval"][0]
+    print(f"Running all baselines on record: {sample.task_id}...")
+    comparison = run_all_baselines_on_record(sample)
+    for mname, r in comparison.items():
+        print(f"[{mname:<10}] is_hallucinated={r['is_hallucinated']} | detections={len(r.get('detections', []))}")
