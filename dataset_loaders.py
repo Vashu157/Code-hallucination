@@ -56,7 +56,8 @@ def load_mbpp(
     split: str = "test",
     n: Optional[int] = None,
     clean_only: bool = True,
-    use_online_hf: bool = False
+    use_online_hf: bool = False,
+    use_full: bool = False
 ) -> List[DatasetRecord]:
     """
     Loads records from the MBPP dataset (Section IV-A).
@@ -67,6 +68,7 @@ def load_mbpp(
         n:             Maximum number of records to return.
         clean_only:    If True, guarantees all returned records are labeled clean (is_hallucinated=False).
         use_online_hf: If True, attempts to fetch from Hugging Face before local fallback.
+        use_full:      If True, loads from the full 974-task release (data/mbpp.jsonl).
 
     Returns:
         List of DatasetRecord instances.
@@ -96,75 +98,169 @@ def load_mbpp(
                 ))
             return records
         except Exception as e:
-            print(f"[DatasetLoader] HF MBPP online load failed ({e}); using bundled local pool.")
+            print(f"[DatasetLoader] HF MBPP online load failed ({e}); using local files.")
 
-    # Local bundled fallback
-    local_path = os.path.join(DATA_DIR, "mbpp_clean.json")
-    if os.path.exists(local_path):
-        with open(local_path, "r", encoding="utf-8") as f:
-            raw_data = json.load(f)
-        for item in raw_data:
-            records.append(DatasetRecord(
-                task_id=item.get("task_id"),
-                dataset="MBPP",
-                prompt=item.get("prompt", ""),
-                code=item.get("code", ""),
-                clean_code=item.get("clean_code", item.get("code", "")),
-                tests=item.get("tests", []),
-                ground_truth_labels=item.get("ground_truth_labels", []),
-                is_hallucinated=item.get("is_hallucinated", False),
-                metadata={"source": "local_mbpp_clean"}
-            ))
+    # 1. Full 974-task MBPP release from Google Research
+    full_mbpp_path = os.path.join(DATA_DIR, "mbpp.jsonl")
+    if use_full and os.path.exists(full_mbpp_path):
+        with open(full_mbpp_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                item = json.loads(line)
+                test_list = item.get("test_list", [])
+                formatted_tests = [{"assertion": t} for t in test_list]
+                records.append(DatasetRecord(
+                    task_id=item.get("task_id"),
+                    dataset="MBPP",
+                    prompt=item.get("text", ""),
+                    code=item.get("code", ""),
+                    clean_code=item.get("code", ""),
+                    tests=formatted_tests,
+                    ground_truth_labels=[],
+                    is_hallucinated=False,
+                    metadata={"source": "google_research_mbpp_full", "setup_code": item.get("test_setup_code", "")}
+                ))
+    else:
+        # 2. Local bundled sample fallback
+        local_path = os.path.join(DATA_DIR, "mbpp_clean.json")
+        if os.path.exists(local_path):
+            with open(local_path, "r", encoding="utf-8") as f:
+                raw_data = json.load(f)
+            for item in raw_data:
+                records.append(DatasetRecord(
+                    task_id=item.get("task_id"),
+                    dataset="MBPP",
+                    prompt=item.get("prompt", ""),
+                    code=item.get("code", ""),
+                    clean_code=item.get("clean_code", item.get("code", "")),
+                    tests=item.get("tests", []),
+                    ground_truth_labels=item.get("ground_truth_labels", []),
+                    is_hallucinated=item.get("is_hallucinated", False),
+                    metadata={"source": "local_mbpp_clean"}
+                ))
 
-    # BUG-16 FIX: Enforce clean_only after loading — local JSON may contain records where
-    # is_hallucinated=True which would silently pollute the clean-code FPR pool.
+    # Enforce clean_only after loading
     if clean_only:
         records = [r for r in records if not r.is_hallucinated]
 
     if n is not None:
-        records = records[:n]
+        records = records[:max(0, n)]
 
     return records
-
 
 
 # =====================================================================
 # 2. CodeHaluEval Loader (Dynamic Hallucination Benchmark with Tests)
 # =====================================================================
 
-def load_codehalueval(n: Optional[int] = None) -> List[DatasetRecord]:
+CHE_CATEGORY_MAP = {
+    "data_compliance_hallucination.json": ("DCH", "Data Compliance Hallucination (DCH)"),
+    "structural_access_hallucination.json": ("SAH", "Structure Access Hallucination (SAH)"),
+    "identification_hallucination.json": ("IH", "Identity Hallucination (IH)"),
+    "external_source_hallucination.json": ("ESH", "External Source Hallucination (ESH)"),
+    "physical_constraint_hallucination.json": ("PCH", "Physical Constraint Hallucination (PCH)"),
+    "calculate_boundary_hallucination.json": ("CBH", "Computational Boundary Hallucination (CBH)"),
+    "logic_deviation.json": ("LDH", "Logical Deviation Hallucination (LDH)"),
+    "logic_breakdown.json": ("LFH", "Logical Failure Hallucination (LFH)"),
+}
+
+
+def load_codehalueval(
+    n: Optional[int] = None,
+    use_full: bool = False,
+    per_category_limit: Optional[int] = None,
+    categories: Optional[List[str]] = None
+) -> List[DatasetRecord]:
     """
     Loads records from the CodeHaluEval dataset (Section IV-A, Table II).
-    Features 699 tasks with executable test suites (avg 12.8 tests/task)
-    and ground-truth hallucination labels (primarily LDH and LFH).
+    Features executable test suites and ground-truth hallucination labels across all 8 canonical types.
 
     Args:
-        n: Maximum number of records to return.
+        n:                  Maximum total number of records to return.
+        use_full:           If True, loads directly from downloaded data/codehalueval/ category files.
+        per_category_limit: Maximum records to pull per canonical category.
+        categories:         Optional list of specific filenames or type_codes to load.
 
     Returns:
         List of DatasetRecord instances.
     """
     records: List[DatasetRecord] = []
-    local_path = os.path.join(DATA_DIR, "codehalueval_samples.json")
+    che_dir = os.path.join(DATA_DIR, "codehalueval")
 
-    if os.path.exists(local_path):
-        with open(local_path, "r", encoding="utf-8") as f:
-            raw_data = json.load(f)
-        for item in raw_data:
-            records.append(DatasetRecord(
-                task_id=item.get("task_id"),
-                dataset="CodeHaluEval",
-                prompt=item.get("prompt", ""),
-                code=item.get("code", ""),
-                clean_code=item.get("clean_code"),
-                tests=item.get("tests", []),
-                ground_truth_labels=item.get("ground_truth_labels", []),
-                is_hallucinated=item.get("is_hallucinated", True),
-                metadata={"source": "codehalueval"}
-            ))
+    if use_full and os.path.exists(che_dir):
+        for fname, (tcode, tname) in CHE_CATEGORY_MAP.items():
+            if categories and (fname not in categories and tcode not in categories):
+                continue
+            fpath = os.path.join(che_dir, fname)
+            if not os.path.exists(fpath):
+                continue
+            try:
+                with open(fpath, "r", encoding="utf-8", errors="ignore") as f:
+                    data = json.load(f)
+                cat_count = 0
+                for item in data:
+                    sol = item.get("solutions")
+                    if not sol:
+                        continue
+                    if isinstance(sol, str):
+                        try:
+                            sol = json.loads(sol)
+                        except Exception:
+                            sol = [sol]
+                    code = sol[0] if sol else ""
+                    if not code or not code.strip():
+                        continue
+
+                    inp = item.get("input", "")
+                    out = item.get("output", "")
+                    tests = [{"input": inp, "expected_output": out}] if inp else []
+
+                    tid = str(item.get("task_id", cat_count))
+                    records.append(DatasetRecord(
+                        task_id=f"{tcode}_{tid}",
+                        dataset="CodeHaluEval",
+                        prompt=item.get("question", ""),
+                        code=code,
+                        clean_code=None,
+                        tests=tests,
+                        ground_truth_labels=[{"type_code": tcode, "error_type": tname}],
+                        is_hallucinated=True,
+                        metadata={
+                            "source": "codehalueval_hf",
+                            "category_file": fname,
+                            "type_code": tcode,
+                            "fn_name": item.get("fn_name"),
+                            "difficulty": item.get("difficulty")
+                        }
+                    ))
+                    cat_count += 1
+                    if per_category_limit and cat_count >= per_category_limit:
+                        break
+            except Exception as e:
+                print(f"[DatasetLoader] Error loading {fname}: {e}")
+
+    else:
+        # Bundled sample fallback
+        local_path = os.path.join(DATA_DIR, "codehalueval_samples.json")
+        if os.path.exists(local_path):
+            with open(local_path, "r", encoding="utf-8") as f:
+                raw_data = json.load(f)
+            for item in raw_data:
+                records.append(DatasetRecord(
+                    task_id=item.get("task_id"),
+                    dataset="CodeHaluEval",
+                    prompt=item.get("prompt", ""),
+                    code=item.get("code", ""),
+                    clean_code=item.get("clean_code"),
+                    tests=item.get("tests", []),
+                    ground_truth_labels=item.get("ground_truth_labels", []),
+                    is_hallucinated=item.get("is_hallucinated", True),
+                    metadata={"source": "codehalueval_samples"}
+                ))
 
     if n is not None:
-        records = records[:n]
+        records = records[:max(0, n)]
 
     return records
 
@@ -205,7 +301,7 @@ def load_hallucode(n: Optional[int] = None) -> List[DatasetRecord]:
             ))
 
     if n is not None:
-        records = records[:n]
+        records = records[:max(0, n)]
 
     return records
 
@@ -217,18 +313,43 @@ def load_hallucode(n: Optional[int] = None) -> List[DatasetRecord]:
 def load_all_datasets(
     mbpp_n: Optional[int] = None,
     codehalu_n: Optional[int] = None,
-    hallucode_n: Optional[int] = None
+    hallucode_n: Optional[int] = None,
+    use_full: bool = False
 ) -> Dict[str, List[DatasetRecord]]:
     """
-    Loads and aggregates all three paper benchmarks.
+    Loads benchmark datasets.
+
+    Args:
+        mbpp_n: Maximum MBPP records to load.
+        codehalu_n: Maximum CodeHaluEval records to load.
+        hallucode_n: Maximum HalluCode records to load.
+        use_full: If True, loads from real downloaded datasets (mbpp.jsonl and data/codehalueval/*.json).
+                  If False, loads local unit test fixtures (22 tasks for fast CI test suite).
 
     Returns:
         Dictionary mapping dataset name to list of DatasetRecord instances.
     """
     return {
-        "MBPP": load_mbpp(n=mbpp_n, clean_only=True),
-        "CodeHaluEval": load_codehalueval(n=codehalu_n),
+        "MBPP": load_mbpp(n=mbpp_n, clean_only=True, use_full=use_full),
+        "CodeHaluEval": load_codehalueval(n=codehalu_n, use_full=use_full),
         "HalluCode": load_hallucode(n=hallucode_n),
+    }
+
+
+def load_real_benchmarks(
+    mbpp_n: int = 100,
+    che_per_category: int = 25
+) -> Dict[str, List[DatasetRecord]]:
+    """
+    Loads genuine real-world benchmark tasks from downloaded sources:
+    - MBPP: Google Research release (mbpp.jsonl) - clean-code pool
+    - CodeHaluEval: Hugging Face release (data/codehalueval/) across all 8 canonical types
+    - HalluCode: Marked as unreleased author artifact (author contacted via email)
+    """
+    return {
+        "MBPP": load_mbpp(n=mbpp_n, clean_only=True, use_full=True),
+        "CodeHaluEval": load_codehalueval(use_full=True, per_category_limit=che_per_category),
+        "HalluCode": load_hallucode()
     }
 
 
@@ -241,7 +362,7 @@ def get_dataset_summary(datasets_dict: Dict[str, List[DatasetRecord]]) -> Dict[s
         total_tasks = len(records)
         hallucinated_count = sum(1 for r in records if r.is_hallucinated)
         clean_count = sum(1 for r in records if not r.is_hallucinated)
-        total_tests = sum(len(r.tests) for r in records)
+        total_tests = sum(len(r.tests or []) for r in records)
         avg_tests = (total_tests / total_tasks) if total_tasks > 0 else 0.0
 
         label_counts: Dict[str, int] = {}

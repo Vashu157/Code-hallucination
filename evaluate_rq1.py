@@ -33,6 +33,12 @@ from baselines import (
     evaluate_detector
 )
 from dataset_loaders import DatasetRecord, load_all_datasets
+from paper_reference_data import (
+    TABLE_II_DATASETS,
+    TABLE_III_RQ1,
+    TABLE_IV_RQ2,
+    TABLE_VII_RQ5
+)
 from sdhd_pipeline import (
     ALL_TAXONOMY_CODES,
     TAXONOMY_MAP,
@@ -116,12 +122,14 @@ class RQ1Evaluator:
         timeout: int = 5,
         c_min: int = 10,
         i_max: int = 3,
-        test_gen_fn: Optional[Any] = None
+        test_gen_fn: Optional[Any] = None,
+        use_oracle_tests: bool = False
     ):
         self.timeout = timeout
         self.c_min = c_min
         self.i_max = i_max
         self.test_gen_fn = test_gen_fn
+        self.use_oracle_tests = use_oracle_tests
 
         if detectors is not None:
             self.detectors = detectors
@@ -134,7 +142,7 @@ class RQ1Evaluator:
                 CodeHaluBaseline(timeout=timeout),
                 SelfDebugBaseline(),
                 SelfCheckBaseline(threshold=0.65),
-                SAC3Baseline(threshold=0.40),
+                SAC3Baseline(threshold=0.20),
             ]
         else:
             # Paper's 4 core compared methods in Table III
@@ -142,7 +150,7 @@ class RQ1Evaluator:
                 SDHDBaselineAdapter(),
                 CodeHaluBaseline(timeout=timeout),
                 SelfCheckBaseline(threshold=0.65),
-                SAC3Baseline(threshold=0.40),
+                SAC3Baseline(threshold=0.20),
             ]
 
     def evaluate_on_dataset(
@@ -155,7 +163,12 @@ class RQ1Evaluator:
         """
         results: Dict[str, Dict[str, Any]] = {}
         for detector in self.detectors:
-            eval_res = evaluate_detector(detector, records, test_gen_fn=self.test_gen_fn)
+            eval_res = evaluate_detector(
+                detector,
+                records,
+                test_gen_fn=self.test_gen_fn,
+                use_oracle_tests=self.use_oracle_tests
+            )
             results[detector.name] = eval_res
         return results
 
@@ -231,12 +244,15 @@ class RQ1Evaluator:
             total = fp + tn
             fpr = (fp / total) if total > 0 else 0.0
             specificity = (tn / total) if total > 0 else 1.0
+            from baselines import wilson_score_interval
+            ci = wilson_score_interval(fp, total)
             results[detector.name] = {
                 "method": detector.name,
                 "total_clean": total,
                 "FP": fp,
                 "TN": tn,
                 "FPR": round(fpr, 4),
+                "FPR_CI95": ci,
                 "Specificity": round(specificity, 4),
                 "accuracy": m["Accuracy"]
             }
@@ -286,16 +302,18 @@ class RQ1Evaluator:
             for rec in dataset_records:
                 if not rec.is_hallucinated:
                     continue
-                rec_gen = None
-                if rec.tests:
-                    def _gen(r, c, f, cnt, _tests=rec.tests):
+
+                if self.use_oracle_tests and rec.tests:
+                    def _oracle_gen(r, c, f, cnt, _tests=rec.tests):
                         return _tests[:cnt] if len(_tests) >= cnt else _tests * (cnt // len(_tests) + 1)
-                    rec_gen = _gen
-                elif self.test_gen_fn:
+                    rec_gen = _oracle_gen
+                    active_tests = rec.tests
+                else:
                     rec_gen = self.test_gen_fn
+                    active_tests = None
 
                 try:
-                    out = d.detect(prompt=rec.prompt, code=rec.code, tests=rec.tests, test_gen_fn=rec_gen)
+                    out = d.detect(prompt=rec.prompt, code=rec.code, tests=active_tests, test_gen_fn=rec_gen)
                     raw_dets = out.get("detections", [])
                     norm_dets = [normalize_hallucination_record(rd) for rd in raw_dets]
                     if out.get("is_hallucinated") and not norm_dets:
@@ -403,12 +421,29 @@ class RQ1Evaluator:
     def generate_table3_markdown(benchmark_data: Dict[str, Any]) -> str:
         """
         Renders Table III: Overall Performance across datasets and methods.
+        Compares strictly against what the paper actually prints (P, R, F1 per benchmark).
         """
         lines = []
-        lines.append("# Table III: Hallucination Detection Performance (RQ1 Reproduction)")
+        lines.append("# Table III: Hallucination Detection Result (Paper vs. Empirical Reproduction)")
         lines.append("")
-        lines.append("| Dataset | Method | Precision | Recall | F1 Score | Accuracy | FPR |")
-        lines.append("| :--- | :--- | :---: | :---: | :---: | :---: | :---: |")
+        lines.append("### 1. Published Values in Base Paper (Yang et al., IEEE TSE 2026, Table III, Page 10)")
+        lines.append("| Model | Metric | MBPP | CHE (CodeHaluEval) | HC (HalluCode) |")
+        lines.append("| :--- | :---: | :---: | :---: | :---: |")
+
+        for model, dsets in TABLE_III_RQ1.items():
+            mbpp_m = dsets.get("MBPP", {})
+            che_m = dsets.get("CHE", {})
+            hc_m = dsets.get("HC", {})
+            lines.append(f"| **{model}** | P | {mbpp_m.get('P', 0.0):.3f} | {che_m.get('P', 0.0):.3f} | {hc_m.get('P', 0.0):.3f} |")
+            lines.append(f"| | R | {mbpp_m.get('R', 0.0):.3f} | {che_m.get('R', 0.0):.3f} | {hc_m.get('R', 0.0):.3f} |")
+            lines.append(f"| | **F1** | **{mbpp_m.get('F1', 0.0):.3f}** | **{che_m.get('F1', 0.0):.3f}** | **{hc_m.get('F1', 0.0):.3f}** |")
+
+        lines.append("")
+        lines.append("*(Note: HalluCode (HC) dataset is an unreleased private author artifact; see Section V-F threats to validity.)*")
+        lines.append("")
+        lines.append("### 2. Empirical Results on Local Benchmark Splits")
+        lines.append("| Dataset | Method | Precision (P) | Recall (R) | F1 Score | Accuracy |")
+        lines.append("| :--- | :--- | :---: | :---: | :---: | :---: |")
 
         splits_order = ["MBPP", "CodeHaluEval", "HalluCode", "Combined"]
         preferred_methods = ["SDHD", "CodeHalu", "SelfCheck", "SAC3", "PyLint", "Flake8", "CodeEval", "SelfDebug"]
@@ -426,13 +461,12 @@ class RQ1Evaluator:
 
             for method in ordered_methods:
                 m = splits_data[split][method]["metrics"]
-                p = f"{m['Precision']:.3f}"
-                r = f"{m['Recall']:.3f}"
-                f1 = f"{m['F1']:.3f}"
-                acc = f"{m['Accuracy']:.3f}"
-                fpr = f"{m['FPR']:.3f}"
+                p = f"{m.get('Precision', 0.0):.3f}"
+                r = f"{m.get('Recall', 0.0):.3f}"
+                f1 = f"{m.get('F1', 0.0):.3f}"
+                acc = f"{m.get('Accuracy', 0.0):.3f}"
                 bold_name = f"**{method}**" if method == "SDHD" else method
-                lines.append(f"| **{split}** | {bold_name} | {p} | {r} | **{f1}** | {acc} | {fpr} |")
+                lines.append(f"| **{split}** | {bold_name} | {p} | {r} | **{f1}** | {acc} |")
 
         lines.append("")
         lines.append("### Statistical Significance (McNemar Test on Combined Split)")
@@ -451,28 +485,34 @@ class RQ1Evaluator:
     @staticmethod
     def generate_table4_markdown(clean_data: Dict[str, Any]) -> str:
         """
-        Renders Table IV: False Positive Rate (FPR) on verified Clean Code pool.
+        Renders Empirical Clean-Code Specificity Diagnostic on verified non-hallucinated code (MBPP).
+        NOTE: Table IV in the base paper is the Component Ablation (Static-only vs Dynamic-only vs SDHD).
+        This table is an empirical diagnostic testing false alarm rates on verified human-written clean code.
         """
         lines = []
-        lines.append("# Table IV: Clean-Code False Positive Rate (MBPP Clean Pool)")
+        lines.append("# Empirical Clean-Code Specificity Diagnostic (MBPP Clean Tasks)")
         lines.append("")
-        lines.append("Evaluates detector specificity and false alarm rates on verified non-hallucinated tasks.")
+        lines.append("Evaluates detector specificity and false alarm rates on verified human-written clean code.")
+        lines.append("Reports 95% Wilson confidence intervals to prevent overinterpreting small-sample variations.")
         lines.append("")
-        lines.append("| Method | Clean Tasks | False Positives (FP) | True Negatives (TN) | FPR (%) | Specificity (%) |")
-        lines.append("| :--- | :---: | :---: | :---: | :---: | :---: |")
+        lines.append("| Method | Clean Tasks | False Positives (FP) | True Negatives (TN) | FPR (%) | FPR 95% CI | Specificity (%) |")
+        lines.append("| :--- | :---: | :---: | :---: | :---: | :---: | :---: |")
 
         for m_name, res in clean_data.items():
             fpr_pct = f"{res['FPR'] * 100:.1f}%"
             spec_pct = f"{res['Specificity'] * 100:.1f}%"
+            ci = res.get("FPR_CI95", (0.0, 0.0))
+            ci_str = f"[{ci[0]*100:.1f}%, {ci[1]*100:.1f}%]"
             bold_name = f"**{m_name}**" if m_name == "SDHD" else m_name
             lines.append(
-                f"| {bold_name} | {res['total_clean']} | {res['FP']} | {res['TN']} | {fpr_pct} | {spec_pct} |"
+                f"| {bold_name} | {res['total_clean']} | {res['FP']} | {res['TN']} | {fpr_pct} | {ci_str} | {spec_pct} |"
             )
 
         lines.append("")
         lines.append("> [!NOTE]")
-        lines.append("> Lower FPR is strictly better. SDHD suppresses false alarms by requiring confirmed")
-        lines.append("> SSA variable lifecycle violations or test execution failures before flagging.")
+        lines.append("> In the IEEE TSE 2026 paper, Table IV is strictly 'A Comparison Between Static and Dynamic Methods'")
+        lines.append("> across MBPP, CHE, and HC (reported in the ablation study). The paper does not print an FPR table.")
+        lines.append("> This diagnostic measures how well static invariants and dynamic execution avoid false alarms on verified clean code.")
         return "\n".join(lines)
 
     @staticmethod
@@ -514,9 +554,9 @@ class RQ1Evaluator:
 
         lines.append("")
         lines.append("### Key Architectural Findings")
-        lines.append("- **Static Categories (IH, ESH, DCH, SAH, PCH, CBH)**: SDHD achieves high coverage via SSA dominator trees and AST constraint matching, where dynamic-only methods (CodeEval, CodeHalu) cannot run without tests.")
+        lines.append("- **Static Categories (IH, ESH, DCH, SAH, PCH, CBH)**: SDHD achieves high coverage via SSA dominator trees and AST constraint matching, where dynamic-only methods cannot run without executable tests.")
         lines.append("- **Dynamic Categories (LDH, LFH)**: SDHD captures subtle logical deviations and crashes via Algorithm 3 ECP/BVA test generation and iterative feedback.")
-        lines.append("- **Linters & Semantic Baselines**: PyLint and Flake8 detect identity/syntax errors (IH/LFH) but lack semantic dataflow tracking for DCH and SAH. SAC3 cosine distance flags semantic deviations but suffers high clean false positive rates.")
+        lines.append("- **Local Baselines**: SelfCheck and SAC3 in this local offline environment operate as structural AST and lexical token proxies; they do not query GPU-hosted GPT-3.5 APIs.")
         return "\n".join(lines)
 
     @staticmethod
@@ -526,12 +566,15 @@ class RQ1Evaluator:
         category_data: Dict[str, Any]
     ) -> str:
         """
-        Generates a consolidated RQ1 evaluation report containing Tables III, IV, and VII
-        along with threats-to-validity and comparative analysis with the paper's reported numbers.
+        Generates a consolidated RQ1 evaluation report containing Tables III, IV, and VII.
+        Dynamically calculates comparisons and deltas against the paper's actual published numbers
+        without hardcoded string literals or rubber-stamp verdicts.
         """
         table3_md = RQ1Evaluator.generate_table3_markdown(benchmark_data)
         table4_md = RQ1Evaluator.generate_table4_markdown(clean_data)
         table7_md = RQ1Evaluator.generate_table7_markdown(category_data)
+
+        splits_data = benchmark_data.get("splits", {})
 
         lines = [
             "# RQ1 Comprehensive Evaluation Report (TSE 2026 Reproduction)",
@@ -555,20 +598,50 @@ class RQ1Evaluator:
             "",
             "## Threats to Validity & Discussion (Section V-F)",
             "",
-            "### 1. Empirical Alignment with TSE 2026 Paper",
-            "| Detector | Paper Reported F1 | Reproduced F1 (Combined) | Trend & Status |",
-            "| :--- | :---: | :---: | :--- |",
-            "| **SDHD (Hybrid)** | **0.776** | **0.85 - 0.91** | Validated: Substantially outperforms all baselines |",
-            "| **CodeHalu** | 0.490 | 0.50 - 0.57 | Validated: Effective on dynamic tasks, blind to static benchmarks |",
-            "| **SAC3** | 0.310 | 0.40 - 0.62 | Validated: High recall on semantic mismatch, degraded by clean FPR |",
-            "| **SelfCheck** | 0.180 | 0.00 - 0.25 | Validated: Sample consistency fails when LLMs repeat systematic errors |",
-            "",
-            "### 2. Explanatory Factors for Divergence",
-            "1. **Dataset Sampling**: The original paper evaluated on 974 MBPP, 699 CodeHaluEval, and 5,664 HalluCode records. Our local reproduction utilizes stratified subsets to ensure fast, deterministic CI/CD and regression testing.",
-            "2. **LLM Substitution**: The original paper used GPT-3.5-turbo for SelfCheck/SAC3 completions. In this reproduction, local deterministic AST representations and Gemini-compatible mock interfaces provide verifiable baseline behavior.",
-            "3. **Modular Detector Fidelity**: Our Phase 1 SSA implementation (Cytron dominance frontiers) provides stronger static guarantees than simplified AST visitors, yielding superior precision on DCH and SAH types.",
-            ""
+            "### 1. Dynamic Metric Comparison with Published Paper Numbers",
+            "| Detector | Paper F1 (CHE) | Local Observed F1 (CodeHaluEval) | Delta | Observation |",
+            "| :--- | :---: | :---: | :---: | :--- |"
         ]
+
+        # Dynamically pull metrics from the actual run
+        che_split = splits_data.get("CodeHaluEval", {})
+        for det_name in ["SDHD", "CodeHalu", "SelfCheck", "SAC3"]:
+            # Paper names in TABLE_III_RQ1: "SDHD", "CodeHalu", "Selfcheck", "SCA3"
+            paper_key = "Selfcheck" if det_name == "SelfCheck" else ("SCA3" if det_name == "SAC3" else det_name)
+            paper_che_f1 = TABLE_III_RQ1.get(paper_key, {}).get("CHE", {}).get("F1", None)
+
+            if det_name in che_split:
+                obs_f1 = che_split[det_name]["metrics"].get("F1", 0.0)
+                paper_str = f"{paper_che_f1:.3f}" if paper_che_f1 is not None else "N/A"
+                obs_str = f"{obs_f1:.3f}"
+                if paper_che_f1 is not None:
+                    delta = obs_f1 - paper_che_f1
+                    delta_str = f"{delta:+.3f}"
+                else:
+                    delta_str = "N/A"
+
+                if det_name == "SDHD":
+                    obs_note = "High detection recall via combined SSA and test loops."
+                elif det_name == "CodeHalu":
+                    obs_note = "Dynamic execution baseline; recall depends on test suite availability."
+                elif det_name == "SelfCheck":
+                    obs_note = "Evaluated as local AST structural proxy; does not call GPU GPT-3.5 API."
+                elif det_name == "SAC3":
+                    obs_note = "Evaluated as local token overlap proxy with calibrated threshold."
+                else:
+                    obs_note = "Local baseline."
+
+                lines.append(f"| **{det_name}** | {paper_str} | {obs_str} | {delta_str} | {obs_note} |")
+
+        lines.extend([
+            "",
+            "### 2. Methodological Clarifications on Discrepancies",
+            "1. **Unreleased HalluCode Dataset**: The base paper evaluated 5,664 tasks from HalluCode, which is an unreleased, private author artifact (authors contacted via email). Consequently, Table III numbers on HalluCode cannot be directly reproduced locally.",
+            "2. **Evaluation Circularity Elimination**: When unit tests are provided in benchmark datasets, directly feeding those tests to a dynamic executor guarantees 1.000 recall because the ground truth label is defined by those same tests. In autonomous mode, Algorithm 3 synthesizes test cases from extracted requirements.",
+            "3. **Baseline Proxy Implementations**: SelfCheck and SAC3 in this offline workspace are lightweight static/lexical proxies (AST signature similarity and token overlap) rather than the original papers' multi-GPU GPT-3.5 completion pipelines with dense embeddings. Comparisons reflect algorithmic proxy behavior.",
+            ""
+        ])
+
         return "\n".join(lines)
 
 

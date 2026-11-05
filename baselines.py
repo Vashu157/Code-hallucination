@@ -96,7 +96,14 @@ class PyLintBaseline(BaseBaseline):
             cmd = [sys.executable, "-m", "pylint", temp_path, "--errors-only", "--output-format=json"]
             proc = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
             raw_out = proc.stdout.strip()
-            records = json.loads(raw_out) if raw_out else []
+            # Safely extract JSON array even if there are preambles or warnings on stdout
+            m = re.search(r'\[.*\]', raw_out, re.DOTALL)
+            if m:
+                records = json.loads(m.group(0))
+            elif raw_out.startswith('['):
+                records = json.loads(raw_out)
+            else:
+                records = []
         except Exception:
             records = []
         finally:
@@ -297,12 +304,12 @@ class CodeHaluBaseline(BaseBaseline):
         **kwargs
     ) -> Dict[str, Any]:
         test_cases = tests or []
+        reqs = None
         if not test_cases:
+            reqs = extract_requirements(prompt, code)
             if test_gen_fn is not None:
-                reqs = extract_requirements(prompt, code)
                 test_cases = test_gen_fn(reqs, code, None, self.test_count)
             else:
-                reqs = extract_requirements(prompt, code)
                 test_cases = generate_test_cases_from_requirements(reqs, code, feedback=None, count=self.test_count)
 
         if not test_cases:
@@ -324,7 +331,8 @@ class CodeHaluBaseline(BaseBaseline):
                     "details": {"syntax_error": str(e)}
                 }
 
-        report = execute_dynamic_tests(code, test_cases, timeout=self.timeout)
+        target_fn = reqs.get("function_name") if reqs else None
+        report = execute_dynamic_tests(code, test_cases, timeout=self.timeout, target_function=target_fn)
         failed = report.get("failed_tests", 0)
         crashed = report.get("crashed_tests", 0)
         is_error = report.get("status") == "error"
@@ -497,7 +505,32 @@ class SelfCheckBaseline(BaseBaseline):
                     "detections": [{"error_type": "Logical Failure Hallucination (LFH)", "variable_name": "syntax", "line_number": None, "detail": "Syntax error in completion"}],
                     "details": {"agreement_score": 0.0, "reason": "Syntax error in completion."}
                 }
-            agreement_score = 0.85
+            # Evaluate structural consistency heuristic when no external candidate completions are provided
+            try:
+                tree = ast.parse(code)
+                defined_names = set()
+                referenced_names = set()
+                has_function = False
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.FunctionDef):
+                        has_function = True
+                        defined_names.add(node.name)
+                        for a in node.args.args:
+                            defined_names.add(a.arg)
+                    elif isinstance(node, ast.Name):
+                        if isinstance(node.ctx, ast.Store):
+                            defined_names.add(node.id)
+                        elif isinstance(node.ctx, ast.Load):
+                            referenced_names.add(node.id)
+                import builtins
+                builtin_names = set(dir(builtins))
+                unresolved = referenced_names - defined_names - builtin_names
+                if unresolved or not has_function:
+                    agreement_score = 0.45
+                else:
+                    agreement_score = 0.85
+            except Exception:
+                agreement_score = 0.40
         else:
             code_features = self._extract_ast_signature(code)
             scores = [self._jaccard_similarity(code_features, self._extract_ast_signature(s)) for s in samples]
@@ -533,15 +566,48 @@ class SAC3Baseline(BaseBaseline):
     """
     SAC3 Baseline (Manakul et al. [23]).
     Measures semantic agreement between the natural language requirement
-    and the code's semantic signature.
+    and the code's semantic signature using identifier decomposition and synonym normalization.
     """
     name: str = "SAC3"
 
-    def __init__(self, threshold: float = 0.40):
+    SYNONYM_MAP = {
+        "min": "minimum",
+        "max": "maximum",
+        "arr": "array",
+        "nums": "numbers",
+        "num": "number",
+        "str": "string",
+        "calc": "calculate",
+        "pos": "positive",
+        "neg": "negative",
+        "len": "length",
+        "val": "value",
+        "elem": "element",
+        "idx": "index",
+        "diff": "difference",
+        "prod": "product",
+        "mult": "multiply",
+        "div": "divide",
+        "avg": "average",
+        "cnt": "count",
+        "rev": "reverse",
+        "sqrt": "root"
+    }
+
+    def __init__(self, threshold: float = 0.25):
         self.threshold = threshold
 
     def _tokenize(self, text: str) -> List[str]:
-        return re.findall(r'[a-zA-Z_]\w*', text.lower())
+        # Split camelCase and snake_case
+        s = re.sub(r'([a-z])([A-Z])', r'\1 \2', text)
+        raw_tokens = re.findall(r'[a-zA-Z]+|\d+', s.lower())
+        boilerplate = {"def", "return", "in", "import", "as", "class", "self", "none", "true", "false"}
+        tokens = []
+        for t in raw_tokens:
+            if t not in boilerplate:
+                norm = self.SYNONYM_MAP.get(t, t)
+                tokens.append(norm)
+        return tokens
 
     def _token_cosine_similarity(self, text1: str, text2: str) -> float:
         tokens1 = self._tokenize(text1)
@@ -688,10 +754,29 @@ def run_all_baselines_on_record(
 # Standard Evaluation Metrics (Section IV-C & Table III)
 # =====================================================================
 
-def calculate_metrics(y_true: List[bool], y_pred: List[bool]) -> Dict[str, float]:
+def wilson_score_interval(successes: int, total: int, confidence: float = 0.95) -> Tuple[float, float]:
     """
-    Computes standard evaluation metrics:
-    Precision (P), Recall (R), F1 Score, Accuracy (Acc), and False Positive Rate (FPR).
+    Computes the Wilson score confidence interval for a binomial proportion.
+    Essential for reporting small-sample metrics (e.g. 100 clean tasks) with honest uncertainty.
+    """
+    if total <= 0:
+        return (0.0, 0.0)
+    # z for 95% confidence = 1.95996
+    z = 1.95996 if confidence == 0.95 else 1.64485
+    p = successes / total
+    denom = 1 + (z ** 2) / total
+    center = (p + (z ** 2) / (2 * total)) / denom
+    spread = (z * math.sqrt((p * (1 - p) + (z ** 2) / (4 * total)) / total)) / denom
+    lower = max(0.0, center - spread)
+    upper = min(1.0, center + spread)
+    return (round(lower, 4), round(upper, 4))
+
+
+def calculate_metrics(y_true: List[bool], y_pred: List[bool]) -> Dict[str, Any]:
+    """
+    Computes evaluation metrics:
+    Precision (P), Recall (R), F1 Score, Accuracy (Acc), and False Positive Rate (FPR),
+    accompanied by 95% Wilson confidence intervals to prevent overinterpreting sample variances.
     """
     tp = sum(1 for yt, yp in zip(y_true, y_pred) if yt and yp)
     fp = sum(1 for yt, yp in zip(y_true, y_pred) if not yt and yp)
@@ -716,14 +801,31 @@ def calculate_metrics(y_true: List[bool], y_pred: List[bool]) -> Dict[str, float
         "F1": round(f1, 4),
         "Accuracy": round(accuracy, 4),
         "FPR": round(fpr, 4),
+        "FPR_CI95": wilson_score_interval(fp, fp + tn) if (fp + tn) > 0 else (0.0, 0.0),
+        "Accuracy_CI95": wilson_score_interval(tp + tn, total),
+        "Recall_CI95": wilson_score_interval(tp, tp + fn) if (tp + fn) > 0 else (0.0, 0.0),
+        "Precision_CI95": wilson_score_interval(tp, tp + fp) if (tp + fp) > 0 else (0.0, 0.0),
     }
 
 
 def evaluate_detector(
     detector: BaseBaseline,
     dataset: List[DatasetRecord],
-    test_gen_fn: Optional[Callable] = None
+    test_gen_fn: Optional[Callable] = None,
+    use_oracle_tests: bool = False
 ) -> Dict[str, Any]:
+    """
+    Evaluates a single detector on a dataset.
+
+    IMPORTANT - Eliminating Evaluation Circularity:
+    If use_oracle_tests is False (the default):
+      - We do NOT feed dataset unit tests into the detector.
+      - Detectors must identify hallucinations autonomously via static analysis or
+        independent test synthesis (Algorithm 3).
+    If use_oracle_tests is True:
+      - The dataset's bundled unit tests are executed. This is strictly an oracle functional
+        check and must be reported as such.
+    """
     y_true: List[bool] = []
     y_pred: List[bool] = []
     per_record: List[Dict[str, Any]] = []
@@ -731,19 +833,22 @@ def evaluate_detector(
     for rec in dataset:
         y_true.append(rec.is_hallucinated)
 
-        record_test_gen = None
-        if rec.tests:
-            def _gen(r, c, f, cnt, _tests=rec.tests):
+        # Oracle mode explicitly uses dataset's packaged assertions
+        if use_oracle_tests and rec.tests:
+            def _oracle_gen(r, c, f, cnt, _tests=rec.tests):
                 return _tests[:cnt] if len(_tests) >= cnt else _tests * (cnt // len(_tests) + 1)
-            record_test_gen = _gen
-        elif test_gen_fn is not None:
+            record_test_gen = _oracle_gen
+            active_tests = rec.tests
+        else:
+            # Autonomous mode: Algorithm 3 generates its own tests
             record_test_gen = test_gen_fn
+            active_tests = None
 
         try:
             res = detector.detect(
                 prompt=rec.prompt,
                 code=rec.code,
-                tests=rec.tests,
+                tests=active_tests,
                 test_gen_fn=record_test_gen
             )
             pred = bool(res.get("is_hallucinated", False))
@@ -768,7 +873,8 @@ def evaluate_detector(
     return {
         "detector": detector.name,
         "metrics": metrics,
-        "records": per_record
+        "records": per_record,
+        "used_oracle_tests": use_oracle_tests
     }
 
 

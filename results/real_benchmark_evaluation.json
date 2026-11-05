@@ -1,0 +1,247 @@
+{
+  "timestamp": "2026-10-05T20:26:50Z",
+  "dataset_counts": {
+    "mbpp": 20,
+    "codehalueval": 24
+  },
+  "mbpp_clean_fpr": {
+    "SDHD": {
+      "metrics": {
+        "TP": 0,
+        "FP": 0,
+        "TN": 20,
+        "FN": 0,
+        "total": 20,
+        "Precision": 0.0,
+        "Recall": 0.0,
+        "F1": 0.0,
+        "Accuracy": 1.0,
+        "FPR": 0.0
+      },
+      "elapsed_seconds": 12.22,
+      "fp_count": 0,
+      "tn_count": 20,
+      "fpr": 0.0,
+      "specificity": 1.0
+    },
+    "CodeHalu": {
+      "metrics": {
+        "TP": 0,
+        "FP": 0,
+        "TN": 20,
+        "FN": 0,
+        "total": 20,
+        "Precision": 0.0,
+        "Recall": 0.0,
+        "F1": 0.0,
+        "Accuracy": 1.0,
+        "FPR": 0.0
+      },
+      "elapsed_seconds": 4.5,
+      "fp_count": 0,
+      "tn_count": 20,
+      "fpr": 0.0,
+      "specificity": 1.0
+    },
+    "SelfCheck": {
+      "metrics": {
+        "TP": 0,
+        "FP": 8,
+        "TN": 12,
+        "FN": 0,
+        "total": 20,
+        "Precision": 0.0,
+        "Recall": 0.0,
+        "F1": 0.0,
+        "Accuracy": 0.6,
+        "FPR": 0.4
+      },
+      "elapsed_seconds": 0.0,
+      "fp_count": 8,
+      "tn_count": 12,
+      "fpr": 0.4,
+      "specificity": 0.6
+    },
+    "SAC3": {
+      "metrics": {
+        "TP": 0,
+        "FP": 20,
+        "TN": 0,
+        "FN": 0,
+        "total": 20,
+        "Precision": 0.0,
+        "Recall": 0.0,
+        "F1": 0.0,
+        "Accuracy": 0.0,
+        "FPR": 1.0
+      },
+      "elapsed_seconds": 0.0,
+      "fp_count": 20,
+      "tn_count": 0,
+      "fpr": 1.0,
+      "specificity": 0.0
+    }
+  },
+  "codehalueval": {
+    "SDHD": {
+      "metrics": {
+        "TP": 24,
+        "FP": 0,
+        "TN": 0,
+        "FN": 0,
+        "total": 24,
+        "Precision": 1.0,
+        "Recall": 1.0,
+        "F1": 1.0,
+        "Accuracy": 1.0,
+        "FPR": 0.0
+      },
+      "elapsed_seconds": 30.39
+    },
+    "CodeHalu": {
+      "metrics": {
+        "TP": 24,
+        "FP": 0,
+        "TN": 0,
+        "FN": 0,
+        "total": 24,
+        "Precision": 1.0,
+        "Recall": 1.0,
+        "F1": 1.0,
+        "Accuracy": 1.0,
+        "FPR": 0.0
+      },
+      "elapsed_seconds": 5.64
+    },
+    "SelfCheck": {
+      "metrics": {
+        "TP": 18,
+        "FP": 0,
+        "TN": 0,
+        "FN": 6,
+        "total": 24,
+        "Precision": 1.0,
+        "Recall": 0.75,
+        "F1": 0.8571,
+        "Accuracy": 0.75,
+        "FPR": 0.0
+      },
+      "elapsed_seconds": 0.02
+    },
+    "SAC3": {
+      "metrics": {
+        "TP": 21,
+        "FP": 0,
+        "TN": 0,
+        "FN": 3,
+        "total": 24,
+        "Precision": 1.0,
+        "Recall": 0.875,
+        "F1": 0.9333,
+        "Accuracy": 0.875,
+        "FPR": 0.0
+      },
+      "elapsed_seconds": 0.01
+    }
+  },
+  "combined": {
+    "SDHD": {
+      "TP": 24,
+      "FP": 0,
+      "TN": 20,
+      "FN": 0,
+      "total": 44,
+      "Precision": 1.0,
+      "Recall": 1.0,
+      "F1": 1.0,
+      "Accuracy": 1.0,
+      "FPR": 0.0
+    },
+    "CodeHalu": {
+      "TP": 24,
+      "FP": 0,
+      "TN": 20,
+      "FN": 0,
+      "total": 44,
+      "Precision": 1.0,
+      "Recall": 1.0,
+      "F1": 1.0,
+      "Accuracy": 1.0,
+      "FPR": 0.0
+    },
+    "SelfCheck": {
+      "TP": 18,
+      "FP": 8,
+      "TN": 12,
+      "FN": 6,
+      "total": 44,
+      "Precision": 0.6923,
+      "Recall": 0.75,
+      "F1": 0.72,
+      "Accuracy": 0.6818,
+      "FPR": 0.4
+    },
+    "SAC3": {
+      "TP": 21,
+      "FP": 20,
+      "TN": 0,
+      "FN": 3,
+      "total": 44,
+      "Precision": 0.5122,
+      "Recall": 0.875,
+      "F1": 0.6462,
+      "Accuracy": 0.4773,
+      "FPR": 1.0
+    }
+  },
+  "per_category_recall": {
+    "DCH": {
+      "SDHD": 1.0,
+      "CodeHalu": 1.0,
+      "SelfCheck": 1.0,
+      "SAC3": 1.0
+    },
+    "SAH": {
+      "SDHD": 1.0,
+      "CodeHalu": 1.0,
+      "SelfCheck": 1.0,
+      "SAC3": 1.0
+    },
+    "IH": {
+      "SDHD": 1.0,
+      "CodeHalu": 1.0,
+      "SelfCheck": 1.0,
+      "SAC3": 1.0
+    },
+    "ESH": {
+      "SDHD": 1.0,
+      "CodeHalu": 1.0,
+      "SelfCheck": 0.0,
+      "SAC3": 1.0
+    },
+    "PCH": {
+      "SDHD": 1.0,
+      "CodeHalu": 1.0,
+      "SelfCheck": 0.0,
+      "SAC3": 1.0
+    },
+    "CBH": {
+      "SDHD": 1.0,
+      "CodeHalu": 1.0,
+      "SelfCheck": 1.0,
+      "SAC3": 0.0
+    },
+    "LDH": {
+      "SDHD": 1.0,
+      "CodeHalu": 1.0,
+      "SelfCheck": 1.0,
+      "SAC3": 1.0
+    },
+    "LFH": {
+      "SDHD": 1.0,
+      "CodeHalu": 1.0,
+      "SelfCheck": 1.0,
+      "SAC3": 1.0
+    }
+  }
+}

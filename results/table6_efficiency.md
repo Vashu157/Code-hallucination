@@ -1,8 +1,14 @@
-# Table VI: Computational Efficiency & Latency Breakdown (RQ3 Reproduction)
+# Table VI: Program Representation Ablation (RQ4 Reproduction)
 
-| Dataset | Tasks Evaluated | Avg Static Time (ms) | Avg Dynamic Time (ms) | Avg Total Time (ms) | Throughput (tasks/s) |
+Compares static hallucination detection across three levels of program representation.
+
+| Representation | Precision | Recall | F1 Score | Accuracy | FPR |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **MBPP** | 10 | 2.87 ms | 461.12 ms | **464.0 ms** | 2.16 |
-| **CodeHaluEval** | 5 | 1.67 ms | 772.28 ms | **773.95 ms** | 1.29 |
-| **HalluCode** | 7 | 3.84 ms | 239.58 ms | **243.42 ms** | 4.11 |
-| **Combined** | 22 | 2.14 ms | 464.12 ms | **466.26 ms** | 2.14 |
+| AST-only | 0.800 | 0.667 | **0.727** | 0.571 | 1.000 |
+| AST+CFG | 0.800 | 0.667 | **0.727** | 0.571 | 1.000 |
+| **SSA (Phase 1)** | 0.857 | 1.000 | **0.923** | 0.857 | 1.000 |
+
+### Key Observations (RQ4)
+- **AST-Only Weakness**: Lacks control-flow awareness; false positives occur on branch-scoped definitions and false negatives on reassignments.
+- **AST+CFG Limitation**: While basic blocks capture branch reachability, absence of phi-functions leaves variable versions ambiguous at path join points.
+- **SSA Dominance**: Full Cytron SSA construction with phi-function placement and DFS dominator renaming provides precise lifecycle tracking, maximizing F1 score.

@@ -2,14 +2,21 @@ import traceback
 import multiprocessing
 import ast
 import math
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
-def _run_test(source_code: str, test_cases_json: list, result_queue: multiprocessing.Queue):
+def _run_test(
+    source_code: str,
+    test_cases_json: list,
+    result_queue: multiprocessing.Queue,
+    target_function: Optional[str] = None
+):
     """
     Worker function to compile and execute the dynamically generated source code,
     then run all test cases. Runs in a separate process to allow for timeout enforcement.
+    Supports both input/expected_output pairs and assertion-based test strings.
     """
     exec_globals = {}
+    test_cases_json = test_cases_json or []
     
     # 1. Compile and execute source code to load it into exec_globals
     try:
@@ -26,25 +33,22 @@ def _run_test(source_code: str, test_cases_json: list, result_queue: multiproces
 
     # Find the function to test
     func_name = None
-    try:
-        tree = ast.parse(source_code)
-        for node in tree.body:
-            if isinstance(node, ast.FunctionDef):
-                func_name = node.name
-                break
-    except Exception:
-        pass
+    if target_function and target_function in exec_globals and callable(exec_globals[target_function]):
+        func_name = target_function
+    else:
+        try:
+            tree = ast.parse(source_code)
+            function_defs = [node.name for node in tree.body if isinstance(node, ast.FunctionDef)]
+            if target_function and target_function in function_defs:
+                func_name = target_function
+            elif function_defs:
+                # Prefer the last non-private function (typical where helpers precede main solve function)
+                public_funcs = [fn for fn in function_defs if not fn.startswith('_')]
+                func_name = public_funcs[-1] if public_funcs else function_defs[-1]
+        except Exception:
+            pass
         
-    if not func_name or func_name not in exec_globals or not callable(exec_globals[func_name]):
-        result_queue.put({
-            "status": "error",
-            "type": "Logical Failure Hallucination (LFH)",
-            "type_code": "LFH",
-            "message": f"Function '{func_name}' not found or not callable in the executed code."
-        })
-        return
-        
-    func = exec_globals[func_name]
+    func = exec_globals.get(func_name) if func_name else None
     
     report = {
         "status": "completed",
@@ -64,19 +68,76 @@ def _run_test(source_code: str, test_cases_json: list, result_queue: multiproces
     
     # 2. Run test cases
     for i, test in enumerate(test_cases_json):
+        # A) Support assertion-based test strings (e.g. MBPP or CodeHalu assertions)
+        is_assertion = isinstance(test, str) or (isinstance(test, dict) and ("assertion" in test or "test" in test))
+        if is_assertion:
+            assertion_str = test if isinstance(test, str) else (test.get("assertion") or test.get("test", ""))
+            try:
+                exec(assertion_str, exec_globals)
+                report["passed_tests"] += 1
+                report["results"].append({
+                    "test_index": i,
+                    "status": "passed",
+                    "assertion": assertion_str,
+                    "actual": "assertion passed"
+                })
+            except AssertionError:
+                report["failed_tests"] += 1
+                report["results"].append({
+                    "test_index": i,
+                    "status": "failed",
+                    "type_code": "LDH",
+                    "hallucination_type": "Logical Deviation Hallucination (LDH)",
+                    "assertion": assertion_str,
+                    "actual": "AssertionError"
+                })
+            except Exception as e:
+                exc_name = type(e).__name__
+                report["crashed_tests"] += 1
+                report["results"].append({
+                    "test_index": i,
+                    "status": "crashed",
+                    "type_code": "LFH",
+                    "hallucination_type": "Logical Failure Hallucination (LFH)",
+                    "assertion": assertion_str,
+                    "error": exc_name,
+                    "traceback": traceback.format_exc()
+                })
+            continue
+
+        # B) Standard input/expected_output JSON pairs
+        if not func or not callable(func):
+            report["crashed_tests"] += 1
+            report["results"].append({
+                "test_index": i,
+                "status": "crashed",
+                "type_code": "LFH",
+                "hallucination_type": "Logical Failure Hallucination (LFH)",
+                "error": f"Function '{func_name}' not found or not callable."
+            })
+            continue
+
         inputs = test.get("input", [])
         expected = test.get("expected_output")
+        is_crash_only = test.get("check_crash_only", False) or expected == "<ANY>"
         
         try:
             # Unpack inputs appropriately
             if isinstance(inputs, list):
-                actual = func(*inputs)
+                try:
+                    actual = func(*inputs)
+                except TypeError as te:
+                    # If func expects 1 argument and inputs is a list (e.g. func(arr)), try func(inputs)
+                    if "positional argument" in str(te):
+                        actual = func(inputs)
+                    else:
+                        raise
             elif isinstance(inputs, dict):
                 actual = func(**inputs)
             else:
                 actual = func(inputs)
                 
-            if _outputs_match(actual, expected):
+            if is_crash_only or _outputs_match(actual, expected):
                 report["passed_tests"] += 1
                 report["results"].append({
                     "test_index": i,
@@ -97,10 +158,18 @@ def _run_test(source_code: str, test_cases_json: list, result_queue: multiproces
                     "actual": actual
                 })
         except Exception as e:
-            # BUG-10 FIX: If expected_output is a string matching the raised exception's
-            # type name (e.g. "ValueError"), treat this as a PASS not a crash.
             exc_type_name = type(e).__name__
-            if isinstance(expected, str) and expected == exc_type_name:
+            # Flexible exception matching (e.g. "ValueError", "raises ValueError", "Exception")
+            is_expected_exc = False
+            if isinstance(expected, str):
+                exp_clean = expected.strip()
+                if (exp_clean == exc_type_name or
+                    exc_type_name in exp_clean or
+                    exp_clean.lower() in exc_type_name.lower() or
+                    exc_type_name.lower() in exp_clean.lower()):
+                    is_expected_exc = True
+
+            if is_expected_exc:
                 report["passed_tests"] += 1
                 report["results"].append({
                     "test_index": i,
@@ -125,7 +194,12 @@ def _run_test(source_code: str, test_cases_json: list, result_queue: multiproces
     result_queue.put(report)
 
 
-def execute_dynamic_tests(source_code: str, test_cases_json: List[Dict[str, Any]], timeout: int = 5) -> Dict[str, Any]:
+def execute_dynamic_tests(
+    source_code: str,
+    test_cases_json: List[Dict[str, Any]],
+    timeout: int = 5,
+    target_function: Optional[str] = None
+) -> Dict[str, Any]:
     """
     Safely executes dynamically generated source code against a set of JSON test cases.
     It catches exceptions and semantic failures, tagging them as LFH or LDH respectively.
@@ -135,7 +209,10 @@ def execute_dynamic_tests(source_code: str, test_cases_json: List[Dict[str, Any]
     ctx = multiprocessing.get_context('spawn')
     result_queue = ctx.Queue()
     
-    process = ctx.Process(target=_run_test, args=(source_code, test_cases_json, result_queue))
+    process = ctx.Process(
+        target=_run_test,
+        args=(source_code, test_cases_json, result_queue, target_function)
+    )
     process.start()
     
     # Wait for the process to finish within the timeout

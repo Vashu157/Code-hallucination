@@ -13,7 +13,23 @@
           "Recall": 0.0,
           "F1": 0.0,
           "Accuracy": 0.9,
-          "FPR": 0.1
+          "FPR": 0.1,
+          "FPR_CI95": [
+            0.0179,
+            0.4041
+          ],
+          "Accuracy_CI95": [
+            0.5959,
+            0.9821
+          ],
+          "Recall_CI95": [
+            0.0,
+            0.0
+          ],
+          "Precision_CI95": [
+            0.0,
+            0.7935
+          ]
         },
         "records": [
           {
@@ -206,7 +222,8 @@
               "overall_status": "PASS"
             }
           }
-        ]
+        ],
+        "used_oracle_tests": false
       },
       "CodeHalu": {
         "detector": "CodeHalu",
@@ -220,7 +237,23 @@
           "Recall": 0.0,
           "F1": 0.0,
           "Accuracy": 1.0,
-          "FPR": 0.0
+          "FPR": 0.0,
+          "FPR_CI95": [
+            0.0,
+            0.2775
+          ],
+          "Accuracy_CI95": [
+            0.7225,
+            1.0
+          ],
+          "Recall_CI95": [
+            0.0,
+            0.0
+          ],
+          "Precision_CI95": [
+            0.0,
+            0.0
+          ]
         },
         "records": [
           {
@@ -228,10 +261,7 @@
             "ground_truth": false,
             "predicted": false,
             "details": {
-              "passed_tests": 3,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
+              "reason": "No test cases available, parsed cleanly."
             }
           },
           {
@@ -239,10 +269,7 @@
             "ground_truth": false,
             "predicted": false,
             "details": {
-              "passed_tests": 3,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
+              "reason": "No test cases available, parsed cleanly."
             }
           },
           {
@@ -250,10 +277,7 @@
             "ground_truth": false,
             "predicted": false,
             "details": {
-              "passed_tests": 3,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
+              "reason": "No test cases available, parsed cleanly."
             }
           },
           {
@@ -261,10 +285,7 @@
             "ground_truth": false,
             "predicted": false,
             "details": {
-              "passed_tests": 4,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
+              "reason": "No test cases available, parsed cleanly."
             }
           },
           {
@@ -272,10 +293,7 @@
             "ground_truth": false,
             "predicted": false,
             "details": {
-              "passed_tests": 3,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
+              "reason": "No test cases available, parsed cleanly."
             }
           },
           {
@@ -283,10 +301,7 @@
             "ground_truth": false,
             "predicted": false,
             "details": {
-              "passed_tests": 3,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
+              "reason": "No test cases available, parsed cleanly."
             }
           },
           {
@@ -294,10 +309,7 @@
             "ground_truth": false,
             "predicted": false,
             "details": {
-              "passed_tests": 2,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
+              "reason": "No test cases available, parsed cleanly."
             }
           },
           {
@@ -305,10 +317,7 @@
             "ground_truth": false,
             "predicted": false,
             "details": {
-              "passed_tests": 4,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
+              "reason": "No test cases available, parsed cleanly."
             }
           },
           {
@@ -316,10 +325,7 @@
             "ground_truth": false,
             "predicted": false,
             "details": {
-              "passed_tests": 2,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
+              "reason": "No test cases available, parsed cleanly."
             }
           },
           {
@@ -327,13 +333,11 @@
             "ground_truth": false,
             "predicted": false,
             "details": {
-              "passed_tests": 3,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
+              "reason": "No test cases available, parsed cleanly."
             }
           }
-        ]
+        ],
+        "used_oracle_tests": false
       },
       "SelfCheck": {
         "detector": "SelfCheck",
@@ -347,7 +351,23 @@
           "Recall": 0.0,
           "F1": 0.0,
           "Accuracy": 1.0,
-          "FPR": 0.0
+          "FPR": 0.0,
+          "FPR_CI95": [
+            0.0,
+            0.2775
+          ],
+          "Accuracy_CI95": [
+            0.7225,
+            1.0
+          ],
+          "Recall_CI95": [
+            0.0,
+            0.0
+          ],
+          "Precision_CI95": [
+            0.0,
+            0.0
+          ]
         },
         "records": [
           {
@@ -450,30 +470,47 @@
               "samples_compared": 0
             }
           }
-        ]
+        ],
+        "used_oracle_tests": false
       },
       "SAC3": {
         "detector": "SAC3",
         "metrics": {
           "TP": 0,
-          "FP": 10,
-          "TN": 0,
+          "FP": 8,
+          "TN": 2,
           "FN": 0,
           "total": 10,
           "Precision": 0.0,
           "Recall": 0.0,
           "F1": 0.0,
-          "Accuracy": 0.0,
-          "FPR": 1.0
+          "Accuracy": 0.2,
+          "FPR": 0.8,
+          "FPR_CI95": [
+            0.4902,
+            0.9433
+          ],
+          "Accuracy_CI95": [
+            0.0567,
+            0.5098
+          ],
+          "Recall_CI95": [
+            0.0,
+            0.0
+          ],
+          "Precision_CI95": [
+            0.0,
+            0.3244
+          ]
         },
         "records": [
           {
             "task_id": 1,
             "ground_truth": false,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.189,
-              "threshold": 0.4
+              "semantic_similarity": 0.321,
+              "threshold": 0.2
             }
           },
           {
@@ -481,8 +518,8 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "semantic_similarity": 0.187,
+              "threshold": 0.2
             }
           },
           {
@@ -490,8 +527,8 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "semantic_similarity": 0.125,
+              "threshold": 0.2
             }
           },
           {
@@ -499,8 +536,8 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.158,
-              "threshold": 0.4
+              "semantic_similarity": 0.145,
+              "threshold": 0.2
             }
           },
           {
@@ -508,8 +545,8 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "semantic_similarity": 0.072,
+              "threshold": 0.2
             }
           },
           {
@@ -517,8 +554,8 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.187,
-              "threshold": 0.4
+              "semantic_similarity": 0.189,
+              "threshold": 0.2
             }
           },
           {
@@ -526,8 +563,8 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.042,
-              "threshold": 0.4
+              "semantic_similarity": 0.088,
+              "threshold": 0.2
             }
           },
           {
@@ -535,17 +572,17 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.083,
-              "threshold": 0.4
+              "semantic_similarity": 0.176,
+              "threshold": 0.2
             }
           },
           {
             "task_id": 9,
             "ground_truth": false,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.121,
-              "threshold": 0.4
+              "semantic_similarity": 0.287,
+              "threshold": 0.2
             }
           },
           {
@@ -553,35 +590,52 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.118,
-              "threshold": 0.4
+              "semantic_similarity": 0.113,
+              "threshold": 0.2
             }
           }
-        ]
+        ],
+        "used_oracle_tests": false
       }
     },
     "CodeHaluEval": {
       "SDHD": {
         "detector": "SDHD",
         "metrics": {
-          "TP": 4,
+          "TP": 0,
           "FP": 0,
           "TN": 1,
-          "FN": 0,
+          "FN": 4,
           "total": 5,
-          "Precision": 1.0,
-          "Recall": 1.0,
-          "F1": 1.0,
-          "Accuracy": 1.0,
-          "FPR": 0.0
+          "Precision": 0.0,
+          "Recall": 0.0,
+          "F1": 0.0,
+          "Accuracy": 0.2,
+          "FPR": 0.0,
+          "FPR_CI95": [
+            0.0,
+            0.7935
+          ],
+          "Accuracy_CI95": [
+            0.0362,
+            0.6245
+          ],
+          "Recall_CI95": [
+            0.0,
+            0.4899
+          ],
+          "Precision_CI95": [
+            0.0,
+            0.0
+          ]
         },
         "records": [
           {
             "task_id": "codehalu_001",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "total_hallucinations": 1,
+              "total_hallucinations": 0,
               "breakdown": {
                 "DCH": 0,
                 "SAH": 0,
@@ -589,18 +643,18 @@
                 "ESH": 0,
                 "PCH": 0,
                 "CBH": 0,
-                "LDH": 1,
+                "LDH": 0,
                 "LFH": 0
               },
-              "overall_status": "POTENTIAL_HALLUCINATION"
+              "overall_status": "PASS"
             }
           },
           {
             "task_id": "codehalu_002",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "total_hallucinations": 1,
+              "total_hallucinations": 0,
               "breakdown": {
                 "DCH": 0,
                 "SAH": 0,
@@ -608,18 +662,18 @@
                 "ESH": 0,
                 "PCH": 0,
                 "CBH": 0,
-                "LDH": 1,
+                "LDH": 0,
                 "LFH": 0
               },
-              "overall_status": "POTENTIAL_HALLUCINATION"
+              "overall_status": "PASS"
             }
           },
           {
             "task_id": "codehalu_003",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "total_hallucinations": 4,
+              "total_hallucinations": 0,
               "breakdown": {
                 "DCH": 0,
                 "SAH": 0,
@@ -628,17 +682,17 @@
                 "PCH": 0,
                 "CBH": 0,
                 "LDH": 0,
-                "LFH": 4
+                "LFH": 0
               },
-              "overall_status": "POTENTIAL_HALLUCINATION"
+              "overall_status": "PASS"
             }
           },
           {
             "task_id": "codehalu_004",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "total_hallucinations": 1,
+              "total_hallucinations": 0,
               "breakdown": {
                 "DCH": 0,
                 "SAH": 0,
@@ -647,9 +701,9 @@
                 "PCH": 0,
                 "CBH": 0,
                 "LDH": 0,
-                "LFH": 1
+                "LFH": 0
               },
-              "overall_status": "POTENTIAL_HALLUCINATION"
+              "overall_status": "PASS"
             }
           },
           {
@@ -671,65 +725,70 @@
               "overall_status": "PASS"
             }
           }
-        ]
+        ],
+        "used_oracle_tests": false
       },
       "CodeHalu": {
         "detector": "CodeHalu",
         "metrics": {
-          "TP": 4,
+          "TP": 0,
           "FP": 0,
           "TN": 1,
-          "FN": 0,
+          "FN": 4,
           "total": 5,
-          "Precision": 1.0,
-          "Recall": 1.0,
-          "F1": 1.0,
-          "Accuracy": 1.0,
-          "FPR": 0.0
+          "Precision": 0.0,
+          "Recall": 0.0,
+          "F1": 0.0,
+          "Accuracy": 0.2,
+          "FPR": 0.0,
+          "FPR_CI95": [
+            0.0,
+            0.7935
+          ],
+          "Accuracy_CI95": [
+            0.0362,
+            0.6245
+          ],
+          "Recall_CI95": [
+            0.0,
+            0.4899
+          ],
+          "Precision_CI95": [
+            0.0,
+            0.0
+          ]
         },
         "records": [
           {
             "task_id": "codehalu_001",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "passed_tests": 9,
-              "failed_tests": 1,
-              "crashed_tests": 0,
-              "execution_status": "completed"
+              "reason": "No test cases available, parsed cleanly."
             }
           },
           {
             "task_id": "codehalu_002",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "passed_tests": 9,
-              "failed_tests": 1,
-              "crashed_tests": 0,
-              "execution_status": "completed"
+              "reason": "No test cases available, parsed cleanly."
             }
           },
           {
             "task_id": "codehalu_003",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "passed_tests": 6,
-              "failed_tests": 0,
-              "crashed_tests": 4,
-              "execution_status": "completed"
+              "reason": "No test cases available, parsed cleanly."
             }
           },
           {
             "task_id": "codehalu_004",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "passed_tests": 9,
-              "failed_tests": 0,
-              "crashed_tests": 1,
-              "execution_status": "completed"
+              "reason": "No test cases available, parsed cleanly."
             }
           },
           {
@@ -737,13 +796,11 @@
             "ground_truth": false,
             "predicted": false,
             "details": {
-              "passed_tests": 10,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
+              "reason": "No test cases available, parsed cleanly."
             }
           }
-        ]
+        ],
+        "used_oracle_tests": false
       },
       "SelfCheck": {
         "detector": "SelfCheck",
@@ -757,7 +814,23 @@
           "Recall": 0.0,
           "F1": 0.0,
           "Accuracy": 0.2,
-          "FPR": 0.0
+          "FPR": 0.0,
+          "FPR_CI95": [
+            0.0,
+            0.7935
+          ],
+          "Accuracy_CI95": [
+            0.0362,
+            0.6245
+          ],
+          "Recall_CI95": [
+            0.0,
+            0.4899
+          ],
+          "Precision_CI95": [
+            0.0,
+            0.0
+          ]
         },
         "records": [
           {
@@ -810,39 +883,56 @@
               "samples_compared": 0
             }
           }
-        ]
+        ],
+        "used_oracle_tests": false
       },
       "SAC3": {
         "detector": "SAC3",
         "metrics": {
-          "TP": 4,
+          "TP": 1,
           "FP": 1,
           "TN": 0,
-          "FN": 0,
+          "FN": 3,
           "total": 5,
-          "Precision": 0.8,
-          "Recall": 1.0,
-          "F1": 0.8889,
-          "Accuracy": 0.8,
-          "FPR": 1.0
+          "Precision": 0.5,
+          "Recall": 0.25,
+          "F1": 0.3333,
+          "Accuracy": 0.2,
+          "FPR": 1.0,
+          "FPR_CI95": [
+            0.2065,
+            1.0
+          ],
+          "Accuracy_CI95": [
+            0.0362,
+            0.6245
+          ],
+          "Recall_CI95": [
+            0.0456,
+            0.6994
+          ],
+          "Precision_CI95": [
+            0.0945,
+            0.9055
+          ]
         },
         "records": [
           {
             "task_id": "codehalu_001",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.067,
-              "threshold": 0.4
+              "semantic_similarity": 0.43,
+              "threshold": 0.2
             }
           },
           {
             "task_id": "codehalu_002",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.171,
-              "threshold": 0.4
+              "semantic_similarity": 0.225,
+              "threshold": 0.2
             }
           },
           {
@@ -851,16 +941,16 @@
             "predicted": true,
             "details": {
               "semantic_similarity": 0.048,
-              "threshold": 0.4
+              "threshold": 0.2
             }
           },
           {
             "task_id": "codehalu_004",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "semantic_similarity": 0.462,
+              "threshold": 0.2
             }
           },
           {
@@ -868,11 +958,12 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.143,
-              "threshold": 0.4
+              "semantic_similarity": 0.08,
+              "threshold": 0.2
             }
           }
-        ]
+        ],
+        "used_oracle_tests": false
       }
     },
     "HalluCode": {
@@ -888,7 +979,23 @@
           "Recall": 1.0,
           "F1": 0.9231,
           "Accuracy": 0.8571,
-          "FPR": 1.0
+          "FPR": 1.0,
+          "FPR_CI95": [
+            0.2065,
+            1.0
+          ],
+          "Accuracy_CI95": [
+            0.4869,
+            0.9743
+          ],
+          "Recall_CI95": [
+            0.6097,
+            1.0
+          ],
+          "Precision_CI95": [
+            0.4869,
+            0.9743
+          ]
         },
         "records": [
           {
@@ -1024,7 +1131,8 @@
               "overall_status": "POTENTIAL_HALLUCINATION"
             }
           }
-        ]
+        ],
+        "used_oracle_tests": false
       },
       "CodeHalu": {
         "detector": "CodeHalu",
@@ -1038,7 +1146,23 @@
           "Recall": 0.0,
           "F1": 0.0,
           "Accuracy": 0.1429,
-          "FPR": 0.0
+          "FPR": 0.0,
+          "FPR_CI95": [
+            0.0,
+            0.7935
+          ],
+          "Accuracy_CI95": [
+            0.0257,
+            0.5131
+          ],
+          "Recall_CI95": [
+            0.0,
+            0.3903
+          ],
+          "Precision_CI95": [
+            0.0,
+            0.0
+          ]
         },
         "records": [
           {
@@ -1097,21 +1221,38 @@
               "reason": "No test cases available, parsed cleanly."
             }
           }
-        ]
+        ],
+        "used_oracle_tests": false
       },
       "SelfCheck": {
         "detector": "SelfCheck",
         "metrics": {
-          "TP": 0,
+          "TP": 2,
           "FP": 0,
           "TN": 1,
-          "FN": 6,
+          "FN": 4,
           "total": 7,
-          "Precision": 0.0,
-          "Recall": 0.0,
-          "F1": 0.0,
-          "Accuracy": 0.1429,
-          "FPR": 0.0
+          "Precision": 1.0,
+          "Recall": 0.3333,
+          "F1": 0.5,
+          "Accuracy": 0.4286,
+          "FPR": 0.0,
+          "FPR_CI95": [
+            0.0,
+            0.7935
+          ],
+          "Accuracy_CI95": [
+            0.1582,
+            0.7495
+          ],
+          "Recall_CI95": [
+            0.0968,
+            0.7
+          ],
+          "Precision_CI95": [
+            0.3424,
+            1.0
+          ]
         },
         "records": [
           {
@@ -1137,9 +1278,9 @@
           {
             "task_id": "hallucode_003",
             "ground_truth": true,
-            "predicted": false,
+            "predicted": true,
             "details": {
-              "agreement_score": 0.85,
+              "agreement_score": 0.45,
               "threshold": 0.65,
               "samples_compared": 0
             }
@@ -1147,9 +1288,9 @@
           {
             "task_id": "hallucode_004",
             "ground_truth": true,
-            "predicted": false,
+            "predicted": true,
             "details": {
-              "agreement_score": 0.85,
+              "agreement_score": 0.45,
               "threshold": 0.65,
               "samples_compared": 0
             }
@@ -1184,39 +1325,56 @@
               "samples_compared": 0
             }
           }
-        ]
+        ],
+        "used_oracle_tests": false
       },
       "SAC3": {
         "detector": "SAC3",
         "metrics": {
-          "TP": 6,
-          "FP": 1,
-          "TN": 0,
-          "FN": 0,
+          "TP": 2,
+          "FP": 0,
+          "TN": 1,
+          "FN": 4,
           "total": 7,
-          "Precision": 0.8571,
-          "Recall": 1.0,
-          "F1": 0.9231,
-          "Accuracy": 0.8571,
-          "FPR": 1.0
+          "Precision": 1.0,
+          "Recall": 0.3333,
+          "F1": 0.5,
+          "Accuracy": 0.4286,
+          "FPR": 0.0,
+          "FPR_CI95": [
+            0.0,
+            0.7935
+          ],
+          "Accuracy_CI95": [
+            0.1582,
+            0.7495
+          ],
+          "Recall_CI95": [
+            0.0968,
+            0.7
+          ],
+          "Precision_CI95": [
+            0.3424,
+            1.0
+          ]
         },
         "records": [
           {
             "task_id": "hallucode_001",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.309,
-              "threshold": 0.4
+              "semantic_similarity": 0.473,
+              "threshold": 0.2
             }
           },
           {
             "task_id": "hallucode_002",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.129,
-              "threshold": 0.4
+              "semantic_similarity": 0.335,
+              "threshold": 0.2
             }
           },
           {
@@ -1224,26 +1382,26 @@
             "ground_truth": true,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "semantic_similarity": 0.104,
+              "threshold": 0.2
             }
           },
           {
             "task_id": "hallucode_004",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "semantic_similarity": 0.316,
+              "threshold": 0.2
             }
           },
           {
             "task_id": "hallucode_005",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "semantic_similarity": 0.246,
+              "threshold": 0.2
             }
           },
           {
@@ -1252,35 +1410,52 @@
             "predicted": true,
             "details": {
               "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "threshold": 0.2
             }
           },
           {
             "task_id": "hallucode_007",
             "ground_truth": false,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "semantic_similarity": 0.314,
+              "threshold": 0.2
             }
           }
-        ]
+        ],
+        "used_oracle_tests": false
       }
     },
     "Combined": {
       "SDHD": {
         "detector": "SDHD",
         "metrics": {
-          "TP": 10,
+          "TP": 6,
           "FP": 2,
           "TN": 10,
-          "FN": 0,
+          "FN": 4,
           "total": 22,
-          "Precision": 0.8333,
-          "Recall": 1.0,
-          "F1": 0.9091,
-          "Accuracy": 0.9091,
-          "FPR": 0.1667
+          "Precision": 0.75,
+          "Recall": 0.6,
+          "F1": 0.6667,
+          "Accuracy": 0.7273,
+          "FPR": 0.1667,
+          "FPR_CI95": [
+            0.047,
+            0.448
+          ],
+          "Accuracy_CI95": [
+            0.5185,
+            0.8685
+          ],
+          "Recall_CI95": [
+            0.3127,
+            0.8318
+          ],
+          "Precision_CI95": [
+            0.4093,
+            0.9285
+          ]
         },
         "records": [
           {
@@ -1476,9 +1651,9 @@
           {
             "task_id": "codehalu_001",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "total_hallucinations": 1,
+              "total_hallucinations": 0,
               "breakdown": {
                 "DCH": 0,
                 "SAH": 0,
@@ -1486,18 +1661,18 @@
                 "ESH": 0,
                 "PCH": 0,
                 "CBH": 0,
-                "LDH": 1,
+                "LDH": 0,
                 "LFH": 0
               },
-              "overall_status": "POTENTIAL_HALLUCINATION"
+              "overall_status": "PASS"
             }
           },
           {
             "task_id": "codehalu_002",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "total_hallucinations": 1,
+              "total_hallucinations": 0,
               "breakdown": {
                 "DCH": 0,
                 "SAH": 0,
@@ -1505,18 +1680,18 @@
                 "ESH": 0,
                 "PCH": 0,
                 "CBH": 0,
-                "LDH": 1,
+                "LDH": 0,
                 "LFH": 0
               },
-              "overall_status": "POTENTIAL_HALLUCINATION"
+              "overall_status": "PASS"
             }
           },
           {
             "task_id": "codehalu_003",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "total_hallucinations": 4,
+              "total_hallucinations": 0,
               "breakdown": {
                 "DCH": 0,
                 "SAH": 0,
@@ -1525,17 +1700,17 @@
                 "PCH": 0,
                 "CBH": 0,
                 "LDH": 0,
-                "LFH": 4
+                "LFH": 0
               },
-              "overall_status": "POTENTIAL_HALLUCINATION"
+              "overall_status": "PASS"
             }
           },
           {
             "task_id": "codehalu_004",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "total_hallucinations": 1,
+              "total_hallucinations": 0,
               "breakdown": {
                 "DCH": 0,
                 "SAH": 0,
@@ -1544,9 +1719,9 @@
                 "PCH": 0,
                 "CBH": 0,
                 "LDH": 0,
-                "LFH": 1
+                "LFH": 0
               },
-              "overall_status": "POTENTIAL_HALLUCINATION"
+              "overall_status": "PASS"
             }
           },
           {
@@ -1701,248 +1876,11 @@
               "overall_status": "POTENTIAL_HALLUCINATION"
             }
           }
-        ]
+        ],
+        "used_oracle_tests": false
       },
       "CodeHalu": {
         "detector": "CodeHalu",
-        "metrics": {
-          "TP": 4,
-          "FP": 0,
-          "TN": 12,
-          "FN": 6,
-          "total": 22,
-          "Precision": 1.0,
-          "Recall": 0.4,
-          "F1": 0.5714,
-          "Accuracy": 0.7273,
-          "FPR": 0.0
-        },
-        "records": [
-          {
-            "task_id": 1,
-            "ground_truth": false,
-            "predicted": false,
-            "details": {
-              "passed_tests": 3,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
-            }
-          },
-          {
-            "task_id": 2,
-            "ground_truth": false,
-            "predicted": false,
-            "details": {
-              "passed_tests": 3,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
-            }
-          },
-          {
-            "task_id": 3,
-            "ground_truth": false,
-            "predicted": false,
-            "details": {
-              "passed_tests": 3,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
-            }
-          },
-          {
-            "task_id": 4,
-            "ground_truth": false,
-            "predicted": false,
-            "details": {
-              "passed_tests": 4,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
-            }
-          },
-          {
-            "task_id": 5,
-            "ground_truth": false,
-            "predicted": false,
-            "details": {
-              "passed_tests": 3,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
-            }
-          },
-          {
-            "task_id": 6,
-            "ground_truth": false,
-            "predicted": false,
-            "details": {
-              "passed_tests": 3,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
-            }
-          },
-          {
-            "task_id": 7,
-            "ground_truth": false,
-            "predicted": false,
-            "details": {
-              "passed_tests": 2,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
-            }
-          },
-          {
-            "task_id": 8,
-            "ground_truth": false,
-            "predicted": false,
-            "details": {
-              "passed_tests": 4,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
-            }
-          },
-          {
-            "task_id": 9,
-            "ground_truth": false,
-            "predicted": false,
-            "details": {
-              "passed_tests": 2,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
-            }
-          },
-          {
-            "task_id": 10,
-            "ground_truth": false,
-            "predicted": false,
-            "details": {
-              "passed_tests": 3,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
-            }
-          },
-          {
-            "task_id": "codehalu_001",
-            "ground_truth": true,
-            "predicted": true,
-            "details": {
-              "passed_tests": 9,
-              "failed_tests": 1,
-              "crashed_tests": 0,
-              "execution_status": "completed"
-            }
-          },
-          {
-            "task_id": "codehalu_002",
-            "ground_truth": true,
-            "predicted": true,
-            "details": {
-              "passed_tests": 9,
-              "failed_tests": 1,
-              "crashed_tests": 0,
-              "execution_status": "completed"
-            }
-          },
-          {
-            "task_id": "codehalu_003",
-            "ground_truth": true,
-            "predicted": true,
-            "details": {
-              "passed_tests": 6,
-              "failed_tests": 0,
-              "crashed_tests": 4,
-              "execution_status": "completed"
-            }
-          },
-          {
-            "task_id": "codehalu_004",
-            "ground_truth": true,
-            "predicted": true,
-            "details": {
-              "passed_tests": 9,
-              "failed_tests": 0,
-              "crashed_tests": 1,
-              "execution_status": "completed"
-            }
-          },
-          {
-            "task_id": "codehalu_005",
-            "ground_truth": false,
-            "predicted": false,
-            "details": {
-              "passed_tests": 10,
-              "failed_tests": 0,
-              "crashed_tests": 0,
-              "execution_status": "completed"
-            }
-          },
-          {
-            "task_id": "hallucode_001",
-            "ground_truth": true,
-            "predicted": false,
-            "details": {
-              "reason": "No test cases available, parsed cleanly."
-            }
-          },
-          {
-            "task_id": "hallucode_002",
-            "ground_truth": true,
-            "predicted": false,
-            "details": {
-              "reason": "No test cases available, parsed cleanly."
-            }
-          },
-          {
-            "task_id": "hallucode_003",
-            "ground_truth": true,
-            "predicted": false,
-            "details": {
-              "reason": "No test cases available, parsed cleanly."
-            }
-          },
-          {
-            "task_id": "hallucode_004",
-            "ground_truth": true,
-            "predicted": false,
-            "details": {
-              "reason": "No test cases available, parsed cleanly."
-            }
-          },
-          {
-            "task_id": "hallucode_005",
-            "ground_truth": true,
-            "predicted": false,
-            "details": {
-              "reason": "No test cases available, parsed cleanly."
-            }
-          },
-          {
-            "task_id": "hallucode_006",
-            "ground_truth": true,
-            "predicted": false,
-            "details": {
-              "reason": "No test cases available, parsed cleanly."
-            }
-          },
-          {
-            "task_id": "hallucode_007",
-            "ground_truth": false,
-            "predicted": false,
-            "details": {
-              "reason": "No test cases available, parsed cleanly."
-            }
-          }
-        ]
-      },
-      "SelfCheck": {
-        "detector": "SelfCheck",
         "metrics": {
           "TP": 0,
           "FP": 0,
@@ -1953,7 +1891,233 @@
           "Recall": 0.0,
           "F1": 0.0,
           "Accuracy": 0.5455,
-          "FPR": 0.0
+          "FPR": 0.0,
+          "FPR_CI95": [
+            0.0,
+            0.2425
+          ],
+          "Accuracy_CI95": [
+            0.3466,
+            0.7308
+          ],
+          "Recall_CI95": [
+            0.0,
+            0.2775
+          ],
+          "Precision_CI95": [
+            0.0,
+            0.0
+          ]
+        },
+        "records": [
+          {
+            "task_id": 1,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": 2,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": 3,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": 4,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": 5,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": 6,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": 7,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": 8,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": 9,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": 10,
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": "codehalu_001",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": "codehalu_002",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": "codehalu_003",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": "codehalu_004",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": "codehalu_005",
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": "hallucode_001",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": "hallucode_002",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": "hallucode_003",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": "hallucode_004",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": "hallucode_005",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": "hallucode_006",
+            "ground_truth": true,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          },
+          {
+            "task_id": "hallucode_007",
+            "ground_truth": false,
+            "predicted": false,
+            "details": {
+              "reason": "No test cases available, parsed cleanly."
+            }
+          }
+        ],
+        "used_oracle_tests": false
+      },
+      "SelfCheck": {
+        "detector": "SelfCheck",
+        "metrics": {
+          "TP": 2,
+          "FP": 0,
+          "TN": 12,
+          "FN": 8,
+          "total": 22,
+          "Precision": 1.0,
+          "Recall": 0.2,
+          "F1": 0.3333,
+          "Accuracy": 0.6364,
+          "FPR": 0.0,
+          "FPR_CI95": [
+            0.0,
+            0.2425
+          ],
+          "Accuracy_CI95": [
+            0.4295,
+            0.8027
+          ],
+          "Recall_CI95": [
+            0.0567,
+            0.5098
+          ],
+          "Precision_CI95": [
+            0.3424,
+            1.0
+          ]
         },
         "records": [
           {
@@ -2129,9 +2293,9 @@
           {
             "task_id": "hallucode_003",
             "ground_truth": true,
-            "predicted": false,
+            "predicted": true,
             "details": {
-              "agreement_score": 0.85,
+              "agreement_score": 0.45,
               "threshold": 0.65,
               "samples_compared": 0
             }
@@ -2139,9 +2303,9 @@
           {
             "task_id": "hallucode_004",
             "ground_truth": true,
-            "predicted": false,
+            "predicted": true,
             "details": {
-              "agreement_score": 0.85,
+              "agreement_score": 0.45,
               "threshold": 0.65,
               "samples_compared": 0
             }
@@ -2176,30 +2340,47 @@
               "samples_compared": 0
             }
           }
-        ]
+        ],
+        "used_oracle_tests": false
       },
       "SAC3": {
         "detector": "SAC3",
         "metrics": {
-          "TP": 10,
-          "FP": 12,
-          "TN": 0,
-          "FN": 0,
+          "TP": 3,
+          "FP": 9,
+          "TN": 3,
+          "FN": 7,
           "total": 22,
-          "Precision": 0.4545,
-          "Recall": 1.0,
-          "F1": 0.625,
-          "Accuracy": 0.4545,
-          "FPR": 1.0
+          "Precision": 0.25,
+          "Recall": 0.3,
+          "F1": 0.2727,
+          "Accuracy": 0.2727,
+          "FPR": 0.75,
+          "FPR_CI95": [
+            0.4677,
+            0.9111
+          ],
+          "Accuracy_CI95": [
+            0.1315,
+            0.4815
+          ],
+          "Recall_CI95": [
+            0.1078,
+            0.6032
+          ],
+          "Precision_CI95": [
+            0.0889,
+            0.5323
+          ]
         },
         "records": [
           {
             "task_id": 1,
             "ground_truth": false,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.189,
-              "threshold": 0.4
+              "semantic_similarity": 0.321,
+              "threshold": 0.2
             }
           },
           {
@@ -2207,8 +2388,8 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "semantic_similarity": 0.187,
+              "threshold": 0.2
             }
           },
           {
@@ -2216,8 +2397,8 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "semantic_similarity": 0.125,
+              "threshold": 0.2
             }
           },
           {
@@ -2225,8 +2406,8 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.158,
-              "threshold": 0.4
+              "semantic_similarity": 0.145,
+              "threshold": 0.2
             }
           },
           {
@@ -2234,8 +2415,8 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "semantic_similarity": 0.072,
+              "threshold": 0.2
             }
           },
           {
@@ -2243,8 +2424,8 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.187,
-              "threshold": 0.4
+              "semantic_similarity": 0.189,
+              "threshold": 0.2
             }
           },
           {
@@ -2252,8 +2433,8 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.042,
-              "threshold": 0.4
+              "semantic_similarity": 0.088,
+              "threshold": 0.2
             }
           },
           {
@@ -2261,17 +2442,17 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.083,
-              "threshold": 0.4
+              "semantic_similarity": 0.176,
+              "threshold": 0.2
             }
           },
           {
             "task_id": 9,
             "ground_truth": false,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.121,
-              "threshold": 0.4
+              "semantic_similarity": 0.287,
+              "threshold": 0.2
             }
           },
           {
@@ -2279,26 +2460,26 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.118,
-              "threshold": 0.4
+              "semantic_similarity": 0.113,
+              "threshold": 0.2
             }
           },
           {
             "task_id": "codehalu_001",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.067,
-              "threshold": 0.4
+              "semantic_similarity": 0.43,
+              "threshold": 0.2
             }
           },
           {
             "task_id": "codehalu_002",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.171,
-              "threshold": 0.4
+              "semantic_similarity": 0.225,
+              "threshold": 0.2
             }
           },
           {
@@ -2307,16 +2488,16 @@
             "predicted": true,
             "details": {
               "semantic_similarity": 0.048,
-              "threshold": 0.4
+              "threshold": 0.2
             }
           },
           {
             "task_id": "codehalu_004",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "semantic_similarity": 0.462,
+              "threshold": 0.2
             }
           },
           {
@@ -2324,26 +2505,26 @@
             "ground_truth": false,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.143,
-              "threshold": 0.4
+              "semantic_similarity": 0.08,
+              "threshold": 0.2
             }
           },
           {
             "task_id": "hallucode_001",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.309,
-              "threshold": 0.4
+              "semantic_similarity": 0.473,
+              "threshold": 0.2
             }
           },
           {
             "task_id": "hallucode_002",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.129,
-              "threshold": 0.4
+              "semantic_similarity": 0.335,
+              "threshold": 0.2
             }
           },
           {
@@ -2351,26 +2532,26 @@
             "ground_truth": true,
             "predicted": true,
             "details": {
-              "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "semantic_similarity": 0.104,
+              "threshold": 0.2
             }
           },
           {
             "task_id": "hallucode_004",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "semantic_similarity": 0.316,
+              "threshold": 0.2
             }
           },
           {
             "task_id": "hallucode_005",
             "ground_truth": true,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "semantic_similarity": 0.246,
+              "threshold": 0.2
             }
           },
           {
@@ -2379,19 +2560,20 @@
             "predicted": true,
             "details": {
               "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "threshold": 0.2
             }
           },
           {
             "task_id": "hallucode_007",
             "ground_truth": false,
-            "predicted": true,
+            "predicted": false,
             "details": {
-              "semantic_similarity": 0.0,
-              "threshold": 0.4
+              "semantic_similarity": 0.314,
+              "threshold": 0.2
             }
           }
-        ]
+        ],
+        "used_oracle_tests": false
       }
     }
   },
@@ -2399,28 +2581,28 @@
     "SDHD_vs_CodeHalu": {
       "sdhd_win": 6,
       "baseline_win": 2,
-      "tie_correct": 14,
-      "tie_wrong": 0,
+      "tie_correct": 10,
+      "tie_wrong": 4,
       "chi2_stat": 1.125,
       "p_value": 0.288844,
       "statistically_significant": false
     },
     "SDHD_vs_SelfCheck": {
-      "sdhd_win": 10,
+      "sdhd_win": 4,
       "baseline_win": 2,
-      "tie_correct": 10,
-      "tie_wrong": 0,
-      "chi2_stat": 4.0833,
-      "p_value": 0.043308,
-      "statistically_significant": true
+      "tie_correct": 12,
+      "tie_wrong": 4,
+      "chi2_stat": 0.1667,
+      "p_value": 0.683091,
+      "statistically_significant": false
     },
     "SDHD_vs_SAC3": {
-      "sdhd_win": 10,
-      "baseline_win": 0,
-      "tie_correct": 10,
-      "tie_wrong": 2,
-      "chi2_stat": 8.1,
-      "p_value": 0.004427,
+      "sdhd_win": 12,
+      "baseline_win": 2,
+      "tie_correct": 4,
+      "tie_wrong": 4,
+      "chi2_stat": 5.7857,
+      "p_value": 0.016157,
       "statistically_significant": true
     }
   }

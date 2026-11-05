@@ -1,0 +1,129 @@
+{
+  "categories": {
+    "DCH": {
+      "type_code": "DCH",
+      "category_name": "Data Compliance Hallucination (DCH)",
+      "gt_count": 1,
+      "caught": {
+        "SDHD-S": 1,
+        "SDHD-D": 0,
+        "SDHD": 1
+      },
+      "recall": {
+        "SDHD-S": 1.0,
+        "SDHD-D": 0.0,
+        "SDHD": 1.0
+      }
+    },
+    "SAH": {
+      "type_code": "SAH",
+      "category_name": "Structure Access Hallucination (SAH)",
+      "gt_count": 1,
+      "caught": {
+        "SDHD-S": 1,
+        "SDHD-D": 0,
+        "SDHD": 1
+      },
+      "recall": {
+        "SDHD-S": 1.0,
+        "SDHD-D": 0.0,
+        "SDHD": 1.0
+      }
+    },
+    "IH": {
+      "type_code": "IH",
+      "category_name": "Identity Hallucination (IH)",
+      "gt_count": 1,
+      "caught": {
+        "SDHD-S": 1,
+        "SDHD-D": 0,
+        "SDHD": 1
+      },
+      "recall": {
+        "SDHD-S": 1.0,
+        "SDHD-D": 0.0,
+        "SDHD": 1.0
+      }
+    },
+    "ESH": {
+      "type_code": "ESH",
+      "category_name": "External Source Hallucination (ESH)",
+      "gt_count": 1,
+      "caught": {
+        "SDHD-S": 1,
+        "SDHD-D": 0,
+        "SDHD": 1
+      },
+      "recall": {
+        "SDHD-S": 1.0,
+        "SDHD-D": 0.0,
+        "SDHD": 1.0
+      }
+    },
+    "PCH": {
+      "type_code": "PCH",
+      "category_name": "Physical Constraint Hallucination (PCH)",
+      "gt_count": 1,
+      "caught": {
+        "SDHD-S": 1,
+        "SDHD-D": 0,
+        "SDHD": 1
+      },
+      "recall": {
+        "SDHD-S": 1.0,
+        "SDHD-D": 0.0,
+        "SDHD": 1.0
+      }
+    },
+    "CBH": {
+      "type_code": "CBH",
+      "category_name": "Computational Boundary Hallucination (CBH)",
+      "gt_count": 1,
+      "caught": {
+        "SDHD-S": 1,
+        "SDHD-D": 0,
+        "SDHD": 1
+      },
+      "recall": {
+        "SDHD-S": 1.0,
+        "SDHD-D": 0.0,
+        "SDHD": 1.0
+      }
+    },
+    "LDH": {
+      "type_code": "LDH",
+      "category_name": "Logical Deviation Hallucination (LDH)",
+      "gt_count": 2,
+      "caught": {
+        "SDHD-S": 0,
+        "SDHD-D": 0,
+        "SDHD": 0
+      },
+      "recall": {
+        "SDHD-S": 0.0,
+        "SDHD-D": 0.0,
+        "SDHD": 0.0
+      }
+    },
+    "LFH": {
+      "type_code": "LFH",
+      "category_name": "Logical Failure Hallucination (LFH)",
+      "gt_count": 2,
+      "caught": {
+        "SDHD-S": 0,
+        "SDHD-D": 0,
+        "SDHD": 0
+      },
+      "recall": {
+        "SDHD-S": 0.0,
+        "SDHD-D": 0.0,
+        "SDHD": 0.0
+      }
+    }
+  },
+  "detector_names": [
+    "SDHD-S",
+    "SDHD-D",
+    "SDHD"
+  ]
+}

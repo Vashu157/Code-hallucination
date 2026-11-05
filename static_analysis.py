@@ -1502,7 +1502,18 @@ def detect_hallucinations(source_code: str) -> List[Dict[str, Any]]:
     DCH, SAH, IH, ESH, PCH, and CBH.
     """
     analyzer = CodeAnalyzer(source_code)
-    analyzer.parse()
+    try:
+        analyzer.parse()
+    except (SyntaxError, Exception) as e:
+        return [{
+            "source": "static",
+            "type_code": "LFH",
+            "error_type": "Logical Failure Hallucination (LFH)",
+            "location": "syntax_error",
+            "variable_name": "syntax_error",
+            "line_number": getattr(e, "lineno", None),
+            "detail": f"Syntax error: {e}"
+        }]
 
     # BUG-1 FIX: Deep-copy the original AST before SSA transformation.
     # SSARenamer mutates ast.Name.id nodes in-place (e.g. 'x' -> 'x1').
@@ -1537,6 +1548,98 @@ def detect_hallucinations(source_code: str) -> List[Dict[str, Any]]:
             unique_errors.append(err)
 
     return unique_errors
+
+
+def detect_hallucinations_ast_only(source_code: str) -> List[Dict[str, Any]]:
+    """
+    RQ4 Ablation Baseline: AST-Only static analysis.
+    Traverses the raw AST with flat lexical scoping without CFG control-flow or SSA dominators.
+    """
+    try:
+        analyzer = CodeAnalyzer(source_code)
+        analyzer.parse()
+        original_tree = copy.deepcopy(analyzer.ast_tree)
+        detector = StaticDetector(renamers=[])
+        detector.visit(original_tree)
+
+        seen = set()
+        unique_errors = []
+        for err in detector.errors:
+            if 'type_code' not in err:
+                m = re.search(r'\((DCH|SAH|IH|ESH|PCH|CBH)\)', err.get('error_type', ''))
+                err['type_code'] = m.group(1) if m else 'UNKNOWN'
+            if 'location' not in err:
+                err['location'] = err.get('variable_name', 'unknown')
+            if 'variable_name' not in err:
+                err['variable_name'] = err.get('location', 'unknown')
+            err['source'] = 'static_ast_only'
+            key = (err['error_type'], err['variable_name'], err['line_number'])
+            if key not in seen:
+                seen.add(key)
+                unique_errors.append(err)
+        return unique_errors
+    except Exception as e:
+        return [{
+            'error_type': 'Logical Failure Hallucination (LFH)',
+            'type_code': 'LFH',
+            'variable_name': 'syntax',
+            'line_number': 1,
+            'detail': str(e),
+            'source': 'static_ast_only'
+        }]
+
+
+def detect_hallucinations_ast_cfg(source_code: str) -> List[Dict[str, Any]]:
+    """
+    RQ4 Ablation Baseline: AST + CFG static analysis.
+    Constructs Control Flow Graph and basic blocks, but omits SSA phi-functions
+    at dominance frontiers and dominator tree variable version renaming.
+    """
+    try:
+        analyzer = CodeAnalyzer(source_code)
+        analyzer.parse()
+        original_tree = copy.deepcopy(analyzer.ast_tree)
+
+        cfg = analyzer.build_cfg()
+        compute_dominators(cfg)
+        # Note: insert_phi_nodes is explicitly omitted to model unversioned AST+CFG
+        renamer = SSARenamer(cfg, known_globals=set(dir(builtins)))
+
+        detector = StaticDetector(renamers=[renamer])
+        for g in set(dir(builtins)):
+            detector.defined_names.add(g)
+        detector.visit(original_tree)
+
+        seen = set()
+        unique_errors = []
+        for err in detector.errors:
+            if 'type_code' not in err:
+                m = re.search(r'\((DCH|SAH|IH|ESH|PCH|CBH)\)', err.get('error_type', ''))
+                err['type_code'] = m.group(1) if m else 'UNKNOWN'
+            if 'location' not in err:
+                err['location'] = err.get('variable_name', 'unknown')
+            if 'variable_name' not in err:
+                err['variable_name'] = err.get('location', 'unknown')
+            err['source'] = 'static_ast_cfg'
+            key = (err['error_type'], err['variable_name'], err['line_number'])
+            if key not in seen:
+                seen.add(key)
+                unique_errors.append(err)
+        return unique_errors
+    except Exception as e:
+        return [{
+            'error_type': 'Logical Failure Hallucination (LFH)',
+            'type_code': 'LFH',
+            'variable_name': 'syntax',
+            'line_number': 1,
+            'detail': str(e),
+            'source': 'static_ast_cfg'
+        }]
+
+
+def detect_hallucinations_ssa(source_code: str) -> List[Dict[str, Any]]:
+    """Full SSA representation (Phase 1): CFG + Cytron dominance frontiers + phi-nodes."""
+    return detect_hallucinations(source_code)
 
 
 # --- Mock Testing ---

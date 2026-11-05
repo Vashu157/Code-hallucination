@@ -23,7 +23,8 @@ from test_case_generator import (
     extract_requirements,
     generate_test_cases_from_requirements,
     generate_feedback,
-    generate_test_cases
+    generate_test_cases,
+    refine_requirements
 )
 from dynamic_executor import execute_dynamic_tests
 
@@ -199,24 +200,26 @@ class SDHD_Pipeline:
         """
         requirements = extract_requirements(user_prompt, generated_code)
         feedback: Optional[str] = None
-        last_test_cases: List[Dict[str, Any]] = []
+        accumulated_test_cases: List[Dict[str, Any]] = []
         last_dynamic_hallucinations: List[Dict[str, Any]] = []
         iterations_run = 0
+
+        target_func = requirements.get("function_name")
 
         for iteration in range(1, self.i_max + 1):
             iterations_run = iteration
             print(f"[SDHD] Dynamic Pipeline: Iteration {iteration}/{self.i_max}")
 
             # Generate test cases (with retry for network)
-            test_cases: List[Dict[str, Any]] = []
+            new_test_cases: List[Dict[str, Any]] = []
             delay = self.retry_delay
 
             for attempt in range(1, self.max_retries + 1):
                 try:
                     if test_gen_fn is not None:
-                        test_cases = test_gen_fn(requirements, generated_code, feedback, self.c_min)
+                        new_test_cases = test_gen_fn(requirements, generated_code, feedback, self.c_min)
                     else:
-                        test_cases = generate_test_cases_from_requirements(
+                        new_test_cases = generate_test_cases_from_requirements(
                             requirements, generated_code, feedback=feedback, count=self.c_min
                         )
                     break
@@ -227,21 +230,37 @@ class SDHD_Pipeline:
                     else:
                         print(f"[SDHD] Test generation error on iteration {iteration}: {e}")
 
-            last_test_cases = test_cases
-            coverage = len(test_cases)
+            # Algorithm 3 Line 10: TestCases <- TestCases U TestCasesnew
+            # If new generation meets C_min independently (e.g. refined full suite), use it;
+            # otherwise incrementally accumulate to reach C_min coverage floor.
+            if len(new_test_cases) >= self.c_min:
+                current_test_cases = new_test_cases
+                accumulated_test_cases = new_test_cases
+            else:
+                seen_tests = {json.dumps(t, sort_keys=True, default=str) for t in accumulated_test_cases}
+                for t in new_test_cases:
+                    sig = json.dumps(t, sort_keys=True, default=str)
+                    if sig not in seen_tests:
+                        seen_tests.add(sig)
+                        accumulated_test_cases.append(t)
+                current_test_cases = accumulated_test_cases
+
+            coverage = len(current_test_cases)
 
             # Step 3: Coverage gate evaluation
             if coverage < self.c_min:
                 print(f"[SDHD] Coverage shortfall ({coverage} < {self.c_min}). Generating feedback...")
-                # BUG-14 FIX: The previous `last_dynamic_hallucinations and X or Y` expression
-                # was inverted: when hallucinations list was non-empty it fed a fake empty report,
-                # discarding actual context. Coverage shortfall always uses a fixed shortfall report.
                 feedback = generate_feedback({"results": [], "status": "shortfall"}, coverage, self.c_min)
-
+                requirements = refine_requirements(requirements, feedback)
                 continue
 
-            # Step 4: Dynamic execution
-            report = execute_dynamic_tests(generated_code, test_cases, timeout=self.timeout)
+            # Step 4: Dynamic execution (Algorithm 3 Line 15)
+            report = execute_dynamic_tests(
+                generated_code,
+                current_test_cases,
+                timeout=self.timeout,
+                target_function=target_func
+            )
             passed = report.get("passed_tests", 0)
             failed = report.get("failed_tests", 0)
             crashed = report.get("crashed_tests", 0)
@@ -280,7 +299,7 @@ class SDHD_Pipeline:
 
             last_dynamic_hallucinations = current_hallucinations
 
-            # Step 5: Check PASS condition
+            # Step 5: Check PASS condition (Algorithm 3 Line 16-19)
             if passed == coverage and coverage >= self.c_min:
                 print(f"[SDHD] Dynamic Stage PASS: All {coverage} test cases passed on iteration {iteration}.")
                 return {
@@ -291,18 +310,30 @@ class SDHD_Pipeline:
                     "requirements": requirements
                 }
 
-            # If errors present and more iterations allowed, generate feedback and refine
+            # If errors present and more iterations allowed, generate feedback and refine (Algorithm 3 Line 22-23)
             if iteration < self.i_max:
                 feedback = generate_feedback(report, coverage, self.c_min)
+                requirements = refine_requirements(requirements, feedback)
                 print(f"[SDHD] Iteration {iteration} encountered issues ({failed} failed, {crashed} crashed). Refining...")
 
-        # Loop exhausted without full PASS
+        # Loop exhausted without full PASS (Algorithm 3 Line 26-27)
+        if not last_dynamic_hallucinations:
+            # If no tests were run, or all executed tests passed (even if coverage < C_min),
+            # dynamic analysis observed zero failures/crashes. Do not inject synthetic LFH defects.
+            return {
+                "status": "PASS",
+                "hallucinations": [],
+                "iterations": iterations_run,
+                "test_cases_run": len(accumulated_test_cases),
+                "requirements": requirements
+            }
+
         print(f"[SDHD] Algorithm 3 exhausted after {self.i_max} iterations -> POTENTIAL_HALLUCINATION.")
         return {
             "status": "POTENTIAL_HALLUCINATION",
             "hallucinations": last_dynamic_hallucinations,
             "iterations": iterations_run,
-            "test_cases_run": len(last_test_cases),
+            "test_cases_run": len(accumulated_test_cases),
             "requirements": requirements
         }
 

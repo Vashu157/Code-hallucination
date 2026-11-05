@@ -2,18 +2,25 @@
 cross_file_analyzer.py — Multi-File & Cross-Module Symbol Resolution Engine (Phase 10)
 ======================================================================================
 Extends the SDHD pipeline from single-snippet evaluation to project-wide codebases.
+Fulfills Section VI-C of the base paper (Yang et al., IEEE TSE 2026), eliminating
+detection shadows in structurally incomplete code and preventing false ESH/IH alerts.
 
 Key Capabilities:
-1. ProjectSymbolTable:
-   - Scans project directories and parses ASTs of all Python modules.
-   - Builds module-level and project-wide symbol tables (functions, classes, variables, __all__).
-   - Resolves relative (`from . import x`, `from ..pkg import y`) and absolute imports.
-2. CrossFileStaticDetector:
-   - Integrates with static_analysis.py and SSA analysis.
-   - Validates that cross-module imports and attribute calls exist in the target module.
-   - Eliminates false-positive ESH for valid local dependencies while catching true
-     cross-file hallucinations (e.g. importing non-existent symbols from local modules).
-3. MultiFileSDHDRunner:
+1. FunctionSignature & ClassDefInfo:
+   - Detailed signatures (min_args, max_args, varargs, varkwargs) for functions and methods.
+   - Class definition metadata with cross-file inheritance tracking and MRO resolution.
+2. ProjectSymbolTable:
+   - Multi-pass deferred symbol resolution across all modules.
+   - Resolves relative imports (. and ..), aliased imports (as alias), and transitive re-exports.
+   - Resolves cross-file class inheritance hierarchies and inherited attributes.
+   - Cycle-resilient against circular imports.
+3. CrossFileStaticDetector:
+   - Inter-module import validation (detects nonexistent symbols -> ESH).
+   - Module attribute validation on imported modules and aliases (nonexistent attr -> ESH).
+   - Function & constructor arity verification across module boundaries (mismatched args -> DCH).
+   - Cross-file class instance method/attribute verification (nonexistent attr -> SAH).
+   - Eliminates single-file false positives for legitimately imported local symbols.
+4. MultiFileSDHDRunner:
    - Orchestrates project-wide static analysis and dynamic sandboxing.
    - Produces structured project-level reports and per-file breakdowns.
 """
@@ -22,8 +29,9 @@ import ast
 import os
 import copy
 import re
+import json
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple, Callable
+from typing import Any, Dict, List, Optional, Set, Tuple, Callable, Union
 
 from static_analysis import (
     CodeAnalyzer,
@@ -36,33 +44,116 @@ from sdhd_pipeline import SDHD_Pipeline, aggregate_and_deduplicate, ALL_TAXONOMY
 
 
 @dataclass
+class FunctionSignature:
+    """Detailed signature metadata for a function or method."""
+    name: str
+    min_args: int = 0  # minimum required positional arguments (without defaults)
+    max_args: Optional[int] = None  # None if *args is present, else maximum positional+kw arguments
+    param_names: List[str] = field(default_factory=list)
+    has_varargs: bool = False
+    has_varkwargs: bool = False
+    is_method: bool = False
+    docstring: Optional[str] = None
+
+
+@dataclass
+class ClassDefInfo:
+    """Metadata and members for a class definition, supporting cross-file inheritance."""
+    name: str
+    base_names: List[str] = field(default_factory=list)  # raw base class names from AST
+    methods: Dict[str, FunctionSignature] = field(default_factory=dict)
+    class_attributes: Set[str] = field(default_factory=set)
+    inherited_attributes: Set[str] = field(default_factory=set)
+    inherited_methods: Dict[str, FunctionSignature] = field(default_factory=dict)
+
+    @property
+    def all_accessible_attributes(self) -> Set[str]:
+        return (
+            set(self.methods.keys())
+            | self.class_attributes
+            | self.inherited_attributes
+            | set(self.inherited_methods.keys())
+        )
+
+    def __contains__(self, item: str) -> bool:
+        return item in self.all_accessible_attributes
+
+    def __iter__(self):
+        return iter(self.all_accessible_attributes)
+
+    def __len__(self) -> int:
+        return len(self.all_accessible_attributes)
+
+    def get_method_signature(self, method_name: str) -> Optional[FunctionSignature]:
+        if method_name in self.methods:
+            return self.methods[method_name]
+        if method_name in self.inherited_methods:
+            return self.inherited_methods[method_name]
+        return None
+
+
+@dataclass
 class ModuleSymbols:
     """Symbols exported and imported by a single Python module/file."""
     file_path: str
     module_name: str
-    functions: Set[str] = field(default_factory=set)
-    classes: Dict[str, Set[str]] = field(default_factory=dict)  # class_name -> set of method/attr names
+    functions: Dict[str, FunctionSignature] = field(default_factory=dict)
+    classes: Dict[str, ClassDefInfo] = field(default_factory=dict)
     variables: Set[str] = field(default_factory=set)
     explicit_all: Optional[Set[str]] = None
     imported_modules: Dict[str, str] = field(default_factory=dict)  # alias -> full_module_name
-    imported_symbols: Dict[str, Tuple[str, str]] = field(default_factory=dict)  # local_name -> (module, remote_name)
+    imported_symbols: Dict[str, Tuple[str, str]] = field(default_factory=dict)  # local_alias -> (module, remote_name)
+    reexports: Dict[str, Tuple[str, str]] = field(default_factory=dict)  # local_name -> (origin_module, remote_name)
 
     @property
     def all_exported_symbols(self) -> Set[str]:
         """Returns the set of symbols exported by this module."""
         if self.explicit_all is not None:
             return self.explicit_all
-        return self.functions | set(self.classes.keys()) | self.variables
+        return (
+            set(self.functions.keys())
+            | set(self.classes.keys())
+            | self.variables
+            | set(self.reexports.keys())
+        )
+
+
+def extract_function_signature(
+    node: Union[ast.FunctionDef, ast.AsyncFunctionDef],
+    is_method: bool = False
+) -> FunctionSignature:
+    """Extracts parameter counts, names, defaults, and variadic flags from AST."""
+    args = node.args
+    pos_args = [a.arg for a in args.args]
+    posonly_args = [a.arg for a in getattr(args, "posonlyargs", [])]
+    all_pos = posonly_args + pos_args
+    num_defaults = len(args.defaults)
+    min_args = max(0, len(all_pos) - num_defaults)
+    has_varargs = args.vararg is not None
+    has_varkwargs = args.kwarg is not None
+    kwonly = getattr(args, "kwonlyargs", [])
+    max_args = None if has_varargs else (len(all_pos) + len(kwonly))
+    param_names = all_pos + [a.arg for a in kwonly]
+    return FunctionSignature(
+        name=node.name,
+        min_args=min_args,
+        max_args=max_args,
+        param_names=param_names,
+        has_varargs=has_varargs,
+        has_varkwargs=has_varkwargs,
+        is_method=is_method
+    )
 
 
 class ProjectSymbolTable:
     """
-    Project-wide symbol table tracking exports across all Python files in a codebase.
+    Project-wide symbol table tracking exports, class hierarchies, and imports
+    across all Python files in a codebase using multi-pass deferred resolution.
     """
 
     def __init__(self, root_dir: Optional[str] = None):
         self.root_dir = os.path.abspath(root_dir) if root_dir else ""
-        self.modules: Dict[str, ModuleSymbols] = {}        # module_name (e.g. 'utils.math') -> ModuleSymbols
+        self.modules: Dict[str, ModuleSymbols] = {}        # module_name -> ModuleSymbols
         self.file_to_module: Dict[str, str] = {}           # norm_rel_path -> module_name
 
     @classmethod
@@ -83,10 +174,11 @@ class ProjectSymbolTable:
             syms = table._parse_module_symbols(rel_path, mod_name, code)
             table.modules[mod_name] = syms
             table.file_to_module[os.path.normpath(rel_path)] = mod_name
+        table._resolve_deferred_dependencies()
         return table
 
     def scan_directory(self, root_dir: str) -> None:
-        """Scans the directory for .py files and parses their symbols."""
+        """Scans the directory for .py files, parses ASTs, and executes deferred resolution."""
         self.root_dir = os.path.abspath(root_dir)
         ignore_dirs = {".git", "__pycache__", ".pytest_cache", ".venv", "venv", "env", "build", "dist", ".idea", ".vscode"}
 
@@ -105,6 +197,7 @@ class ProjectSymbolTable:
                         self.file_to_module[os.path.normpath(rel_path)] = mod_name
                     except Exception:
                         pass
+        self._resolve_deferred_dependencies()
 
     def _path_to_module_name(self, rel_path: str) -> str:
         """Converts a relative file path to a dotted Python module name."""
@@ -116,8 +209,23 @@ class ProjectSymbolTable:
             parts = parts[:-1]
         return ".".join(parts) if parts else "__main__"
 
+    def _resolve_relative_module(self, current_module: str, level: int, import_module: Optional[str]) -> str:
+        """Resolves relative import paths (. and ..) into absolute dotted module names."""
+        target_mod = import_module or ""
+        if level > 0:
+            curr_parts = current_module.split(".") if current_module else []
+            if len(curr_parts) >= level:
+                base_parts = curr_parts[:-level]
+            else:
+                base_parts = []
+            if target_mod:
+                target_mod = ".".join(base_parts + [target_mod]) if base_parts else target_mod
+            else:
+                target_mod = ".".join(base_parts)
+        return target_mod
+
     def _parse_module_symbols(self, rel_path: str, module_name: str, code: str) -> ModuleSymbols:
-        """Extracts top-level function, class, and variable definitions via AST."""
+        """Pass 1: Extracts top-level function signatures, class definitions, variables, and imports."""
         syms = ModuleSymbols(file_path=rel_path, module_name=module_name)
         try:
             tree = ast.parse(code)
@@ -126,17 +234,28 @@ class ProjectSymbolTable:
 
         for node in tree.body:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                syms.functions.add(node.name)
+                sig = extract_function_signature(node, is_method=False)
+                syms.functions[node.name] = sig
             elif isinstance(node, ast.ClassDef):
-                methods: Set[str] = set()
+                base_names: List[str] = []
+                for b in node.bases:
+                    if isinstance(b, ast.Name):
+                        base_names.append(b.id)
+                    elif isinstance(b, ast.Attribute) and isinstance(b.value, ast.Name):
+                        base_names.append(f"{b.value.id}.{b.attr}")
+                c_info = ClassDefInfo(name=node.name, base_names=base_names)
                 for item in node.body:
                     if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                        methods.add(item.name)
+                        sig = extract_function_signature(item, is_method=True)
+                        c_info.methods[item.name] = sig
                     elif isinstance(item, ast.Assign):
                         for tgt in item.targets:
                             if isinstance(tgt, ast.Name):
-                                methods.add(tgt.id)
-                syms.classes[node.name] = methods
+                                c_info.class_attributes.add(tgt.id)
+                    elif isinstance(item, ast.AnnAssign):
+                        if isinstance(item.target, ast.Name):
+                            c_info.class_attributes.add(item.target.id)
+                syms.classes[node.name] = c_info
             elif isinstance(node, ast.Assign):
                 for tgt in node.targets:
                     if isinstance(tgt, ast.Name):
@@ -156,17 +275,105 @@ class ProjectSymbolTable:
                     syms.imported_modules[name_key] = alias.name
             elif isinstance(node, ast.ImportFrom):
                 mod = node.module or ""
+                resolved_mod = self._resolve_relative_module(module_name, node.level, mod)
                 for alias in node.names:
                     name_key = alias.asname or alias.name
-                    syms.imported_symbols[name_key] = (mod, alias.name)
+                    syms.imported_symbols[name_key] = (resolved_mod, alias.name)
 
         return syms
+
+    def _resolve_deferred_dependencies(self) -> None:
+        """Executes Pass 2 (transitive re-exports) and Pass 3 (cross-module inheritance)."""
+        self._resolve_reexports()
+        self._resolve_class_inheritance()
+
+    def _resolve_reexports(self) -> None:
+        """Pass 2: Resolves transitive re-exports across project modules with cycle detection."""
+        for mod_name, mod_syms in self.modules.items():
+            for local_name, (target_mod, remote_name) in list(mod_syms.imported_symbols.items()):
+                if not self.is_local_module(target_mod):
+                    continue
+                visited = {(target_mod, remote_name)}
+                curr_mod, curr_name = target_mod, remote_name
+                while True:
+                    target_syms = self.modules.get(curr_mod)
+                    if not target_syms:
+                        break
+                    if (curr_name in target_syms.functions or
+                        curr_name in target_syms.classes or
+                        curr_name in target_syms.variables):
+                        mod_syms.reexports[local_name] = (curr_mod, curr_name)
+                        break
+                    if curr_name in target_syms.imported_symbols:
+                        next_mod, next_name = target_syms.imported_symbols[curr_name]
+                        if (next_mod, next_name) in visited or not self.is_local_module(next_mod):
+                            break
+                        visited.add((next_mod, next_name))
+                        curr_mod, curr_name = next_mod, next_name
+                    else:
+                        break
+
+    def _resolve_class_inheritance(self) -> None:
+        """Pass 3: Resolves base classes across module boundaries and computes inherited members."""
+        visited: Set[Tuple[str, str]] = set()
+        for mod_name, mod_syms in self.modules.items():
+            for cls_name, cls_info in mod_syms.classes.items():
+                self._populate_class_inheritance(mod_name, cls_info, visited)
+
+    def _populate_class_inheritance(
+        self,
+        current_module: str,
+        cls_info: ClassDefInfo,
+        visited_classes: Set[Tuple[str, str]]
+    ) -> None:
+        class_key = (current_module, cls_info.name)
+        if class_key in visited_classes:
+            return
+        visited_classes.add(class_key)
+
+        curr_syms = self.modules.get(current_module)
+        for base_name in cls_info.base_names:
+            base_cls_info: Optional[ClassDefInfo] = None
+            base_mod_name: Optional[str] = None
+
+            # 1. Local class in same module
+            if curr_syms and base_name in curr_syms.classes:
+                base_cls_info = curr_syms.classes[base_name]
+                base_mod_name = current_module
+            # 2. Directly imported class: from other_mod import Base
+            elif curr_syms and base_name in curr_syms.imported_symbols:
+                target_mod, remote_name = curr_syms.imported_symbols[base_name]
+                target_syms = self.modules.get(target_mod)
+                if target_syms and remote_name in target_syms.classes:
+                    base_cls_info = target_syms.classes[remote_name]
+                    base_mod_name = target_mod
+            # 3. Aliased import: other_mod.Base
+            elif "." in base_name and curr_syms:
+                mod_alias, remote_name = base_name.split(".", 1)
+                resolved_mod = curr_syms.imported_modules.get(mod_alias, mod_alias)
+                target_syms = self.modules.get(resolved_mod)
+                if target_syms and remote_name in target_syms.classes:
+                    base_cls_info = target_syms.classes[remote_name]
+                    base_mod_name = resolved_mod
+
+            if base_cls_info and base_mod_name:
+                # Recurse up the inheritance tree
+                self._populate_class_inheritance(base_mod_name, base_cls_info, visited_classes)
+                # Inherit methods
+                for m_name, m_sig in base_cls_info.methods.items():
+                    if m_name not in cls_info.methods and m_name not in cls_info.inherited_methods:
+                        cls_info.inherited_methods[m_name] = m_sig
+                for m_name, m_sig in base_cls_info.inherited_methods.items():
+                    if m_name not in cls_info.methods and m_name not in cls_info.inherited_methods:
+                        cls_info.inherited_methods[m_name] = m_sig
+                # Inherit class attributes
+                cls_info.inherited_attributes.update(base_cls_info.class_attributes)
+                cls_info.inherited_attributes.update(base_cls_info.inherited_attributes)
 
     def is_local_module(self, module_name: str) -> bool:
         """Checks whether a module exists in the local project workspace."""
         if not module_name:
             return False
-        # Direct match or package prefix match
         if module_name in self.modules:
             return True
         for m in self.modules:
@@ -178,6 +385,20 @@ class ProjectSymbolTable:
         """Retrieves symbols for a local module name."""
         return self.modules.get(module_name)
 
+    def get_class_info(self, module_name: str, class_name: str) -> Optional[ClassDefInfo]:
+        """Retrieves class definition info, resolving through local definitions or re-exports."""
+        mod = self.get_module(module_name)
+        if not mod:
+            return None
+        if class_name in mod.classes:
+            return mod.classes[class_name]
+        if class_name in mod.reexports:
+            origin_mod, origin_name = mod.reexports[class_name]
+            orig = self.get_module(origin_mod)
+            if orig and origin_name in orig.classes:
+                return orig.classes[origin_name]
+        return None
+
     def resolve_import(
         self,
         current_module: str,
@@ -187,39 +408,20 @@ class ProjectSymbolTable:
     ) -> Dict[str, Any]:
         """
         Resolves an imported symbol from another module (handling relative and absolute imports).
-        Returns:
-            Dict with keys: {
-                'is_local': bool,
-                'resolved_module': Optional[str],
-                'symbol_exists': bool,
-                'reason': str
-            }
+        Returns dict with: is_local, resolved_module, symbol_exists, reason.
         """
-        target_mod = import_module or ""
-
-        # Handle relative imports (e.g. from . import helper or from ..utils import calc)
-        if level > 0:
-            curr_parts = current_module.split(".") if current_module else []
-            if len(curr_parts) >= level:
-                base_parts = curr_parts[:-level]
-            else:
-                base_parts = []
-            if target_mod:
-                target_mod = ".".join(base_parts + [target_mod]) if base_parts else target_mod
-            else:
-                target_mod = ".".join(base_parts)
+        target_mod = self._resolve_relative_module(current_module, level, import_module)
 
         if not self.is_local_module(target_mod):
             return {
                 "is_local": False,
                 "resolved_module": target_mod,
-                "symbol_exists": True,  # Assumed standard/external library
+                "symbol_exists": True,  # Standard/third-party library
                 "reason": "External / third-party / standard library"
             }
 
         mod_syms = self.get_module(target_mod)
         if mod_syms is None:
-            # Package directory with submodule
             sub_mod_name = f"{target_mod}.{symbol_name}" if target_mod else symbol_name
             if self.is_local_module(sub_mod_name):
                 return {
@@ -235,7 +437,6 @@ class ProjectSymbolTable:
                 "reason": f"Module '{target_mod}' not found in project workspace."
             }
 
-        # Wildcard import
         if symbol_name == "*":
             return {
                 "is_local": True,
@@ -244,7 +445,6 @@ class ProjectSymbolTable:
                 "reason": f"Wildcard import exports {len(mod_syms.all_exported_symbols)} symbols."
             }
 
-        # Check if symbol exists in module
         if symbol_name in mod_syms.all_exported_symbols:
             return {
                 "is_local": True,
@@ -253,7 +453,6 @@ class ProjectSymbolTable:
                 "reason": f"Symbol '{symbol_name}' found in '{target_mod}'."
             }
 
-        # Check if symbol is a sub-module
         sub_mod_name = f"{target_mod}.{symbol_name}"
         if self.is_local_module(sub_mod_name):
             return {
@@ -271,9 +470,56 @@ class ProjectSymbolTable:
         }
 
 
+def check_call_arity(
+    call_node: ast.Call,
+    sig: FunctionSignature,
+    is_method_call: bool,
+    label: str
+) -> Optional[Dict[str, Any]]:
+    """Checks argument count against function/method signature and flags DCH on mismatch."""
+    num_args = len(call_node.args)
+    num_kwargs = len([kw for kw in call_node.keywords if kw.arg is not None])
+    total_supplied = num_args + num_kwargs
+
+    effective_min = sig.min_args
+    effective_max = sig.max_args
+    if is_method_call and sig.is_method:
+        effective_min = max(0, effective_min - 1)
+        if effective_max is not None:
+            effective_max = max(0, effective_max - 1)
+
+    has_star_arg = any(isinstance(a, ast.Starred) for a in call_node.args)
+    has_star_kwarg = any(kw.arg is None for kw in call_node.keywords)
+    if has_star_arg or has_star_kwarg:
+        return None
+
+    if total_supplied < effective_min:
+        return {
+            "error_type": "Data Compliance Hallucination (DCH)",
+            "type_code": "DCH",
+            "variable_name": f"{sig.name}()",
+            "line_number": call_node.lineno,
+            "source": "static",
+            "detail": f"{label} requires at least {effective_min} arguments, but {total_supplied} were provided."
+        }
+
+    if not sig.has_varargs and effective_max is not None and total_supplied > effective_max:
+        return {
+            "error_type": "Data Compliance Hallucination (DCH)",
+            "type_code": "DCH",
+            "variable_name": f"{sig.name}()",
+            "line_number": call_node.lineno,
+            "source": "static",
+            "detail": f"{label} accepts at most {effective_max} arguments, but {total_supplied} were provided."
+        }
+
+    return None
+
+
 class CrossFileStaticDetector:
     """
-    Extends static hallucination detection across multi-file boundaries.
+    Extends static hallucination detection across multi-file repository boundaries.
+    Detects cross-file ESH, SAH, and DCH while eliminating false positives.
     """
 
     def __init__(self, symbol_table: Optional[ProjectSymbolTable] = None):
@@ -291,7 +537,6 @@ class CrossFileStaticDetector:
         # 1. Base single-file static analysis
         raw_errors = detect_hallucinations(source_code)
 
-        # 2. Parse imports to identify cross-file dependencies and filter false ESH / catch missing imports
         try:
             tree = ast.parse(source_code)
         except SyntaxError:
@@ -299,7 +544,11 @@ class CrossFileStaticDetector:
 
         cross_file_errors: List[Dict[str, Any]] = []
         valid_local_imports: Set[str] = set()
+        imported_modules: Dict[str, str] = {}               # alias -> full_mod_name
+        imported_symbols: Dict[str, Tuple[str, str]] = {}   # alias -> (full_mod_name, remote_name)
+        var_types: Dict[str, Tuple[str, str]] = {}          # var_name -> (defining_module, class_name)
 
+        # 2. First Pass: Collect imports and resolve against ProjectSymbolTable
         for node in ast.walk(tree):
             if isinstance(node, ast.ImportFrom):
                 mod = node.module
@@ -317,7 +566,6 @@ class CrossFileStaticDetector:
 
                     if res["is_local"]:
                         if not res["symbol_exists"]:
-                            # Hallucination: importing non-existent symbol from local module
                             cross_file_errors.append({
                                 "error_type": "External Source Hallucination (ESH)",
                                 "type_code": "ESH",
@@ -328,8 +576,10 @@ class CrossFileStaticDetector:
                             })
                         else:
                             valid_local_imports.add(asname)
+                            resolved_mod = res["resolved_module"] or ""
+                            imported_symbols[asname] = (resolved_mod, sym_name)
                             if sym_name == "*":
-                                target_mod = self.symbol_table.get_module(res["resolved_module"])
+                                target_mod = self.symbol_table.get_module(resolved_mod)
                                 if target_mod:
                                     valid_local_imports.update(target_mod.all_exported_symbols)
 
@@ -339,14 +589,83 @@ class CrossFileStaticDetector:
                     asname = alias.asname or mod_name
                     if self.symbol_table.is_local_module(mod_name):
                         valid_local_imports.add(asname)
+                        imported_modules[asname] = mod_name
 
-            # Check cross-file attribute calls on imported modules: mod.func(...)
-            elif isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
-                if isinstance(node.func.value, ast.Name):
+        # 3. Second Pass: Track variable instantiations and check cross-file calls
+        for node in ast.walk(tree):
+            # Track variable assignments: var = ClassName(...) or var = mod.ClassName(...)
+            if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
+                assigned_names = [tgt.id for tgt in node.targets if isinstance(tgt, ast.Name)]
+                call_func = node.value.func
+                target_cls_tuple: Optional[Tuple[str, str]] = None
+
+                if isinstance(call_func, ast.Name):
+                    c_name = call_func.id
+                    if c_name in imported_symbols:
+                        target_cls_tuple = imported_symbols[c_name]
+                    elif current_module:
+                        curr_syms = self.symbol_table.get_module(current_module)
+                        if curr_syms and c_name in curr_syms.classes:
+                            target_cls_tuple = (current_module, c_name)
+                elif isinstance(call_func, ast.Attribute) and isinstance(call_func.value, ast.Name):
+                    m_alias = call_func.value.id
+                    c_name = call_func.attr
+                    target_mod = imported_modules.get(m_alias, m_alias)
+                    if self.symbol_table.is_local_module(target_mod):
+                        target_cls_tuple = (target_mod, c_name)
+
+                if target_cls_tuple:
+                    def_mod, cls_name = target_cls_tuple
+                    cls_info = self.symbol_table.get_class_info(def_mod, cls_name)
+                    if cls_info:
+                        for vname in assigned_names:
+                            var_types[vname] = (def_mod, cls_name)
+                        # Check constructor arity
+                        init_sig = cls_info.get_method_signature("__init__")
+                        if init_sig:
+                            arity_err = check_call_arity(
+                                node.value,
+                                init_sig,
+                                is_method_call=True,
+                                label=f"Constructor for class '{cls_name}'"
+                            )
+                            if arity_err:
+                                cross_file_errors.append(arity_err)
+
+            # Track annotated assignments: var: ClassName = ...
+            elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+                ann = node.annotation
+                if isinstance(ann, ast.Name) and ann.id in imported_symbols:
+                    var_types[node.target.id] = imported_symbols[ann.id]
+
+            # Check Calls: direct function calls and method/attribute calls
+            elif isinstance(node, ast.Call):
+                # A: Direct function call: func(...)
+                if isinstance(node.func, ast.Name):
+                    fname = node.func.id
+                    if fname in imported_symbols:
+                        target_mod, remote_name = imported_symbols[fname]
+                        mod_syms = self.symbol_table.get_module(target_mod)
+                        if mod_syms and remote_name in mod_syms.functions:
+                            sig = mod_syms.functions[remote_name]
+                            arity_err = check_call_arity(
+                                node,
+                                sig,
+                                is_method_call=False,
+                                label=f"Function '{remote_name}' in module '{target_mod}'"
+                            )
+                            if arity_err:
+                                cross_file_errors.append(arity_err)
+
+                # B: Attribute call: recv.attr(...)
+                elif isinstance(node.func, ast.Attribute) and isinstance(node.func.value, ast.Name):
                     recv = node.func.value.id
                     attr = node.func.attr
-                    if self.symbol_table.is_local_module(recv):
-                        target_mod = self.symbol_table.get_module(recv)
+
+                    # Subcase 1: recv is an imported module or module alias
+                    if recv in imported_modules or self.symbol_table.is_local_module(recv):
+                        target_mod_name = imported_modules.get(recv, recv)
+                        target_mod = self.symbol_table.get_module(target_mod_name)
                         if target_mod and attr not in target_mod.all_exported_symbols:
                             cross_file_errors.append({
                                 "error_type": "External Source Hallucination (ESH)",
@@ -354,19 +673,58 @@ class CrossFileStaticDetector:
                                 "variable_name": f"{recv}.{attr}()",
                                 "line_number": node.lineno,
                                 "source": "static",
-                                "detail": f"Local module '{recv}' has no function/attribute '{attr}'."
+                                "detail": f"Local module '{target_mod_name}' has no function/attribute '{attr}'."
                             })
+                        elif target_mod and attr in target_mod.functions:
+                            sig = target_mod.functions[attr]
+                            arity_err = check_call_arity(
+                                node,
+                                sig,
+                                is_method_call=False,
+                                label=f"Function '{attr}' in module '{target_mod_name}'"
+                            )
+                            if arity_err:
+                                cross_file_errors.append(arity_err)
 
-        # 3. Filter out false-positive ESH/IH from base analyzer if the symbol was imported from local workspace
+                    # Subcase 2: recv is an instance of a cross-file class
+                    elif recv in var_types:
+                        def_mod, cls_name = var_types[recv]
+                        cls_info = self.symbol_table.get_class_info(def_mod, cls_name)
+                        if cls_info:
+                            if attr not in cls_info.all_accessible_attributes:
+                                cross_file_errors.append({
+                                    "error_type": "Structure Access Hallucination (SAH)",
+                                    "type_code": "SAH",
+                                    "variable_name": f"{recv}.{attr}()",
+                                    "line_number": node.lineno,
+                                    "source": "static",
+                                    "detail": f"Instance of class '{cls_name}' (from '{def_mod}') has no attribute or method '{attr}'."
+                                })
+                            else:
+                                meth_sig = cls_info.get_method_signature(attr)
+                                if meth_sig:
+                                    arity_err = check_call_arity(
+                                        node,
+                                        meth_sig,
+                                        is_method_call=True,
+                                        label=f"Method '{attr}' of class '{cls_name}'"
+                                    )
+                                    if arity_err:
+                                        cross_file_errors.append(arity_err)
+
+        # 4. Filter out false-positive ESH/IH from base analyzer if the symbol was imported from local workspace
         filtered_base_errors = []
         for err in raw_errors:
             var_name = err.get("variable_name", "")
-            # If base analyzer flagged an unimported function that was actually imported from a local module
-            if err.get("type_code") in ("ESH", "IH") and var_name in valid_local_imports:
+            if err.get("type_code") in ("ESH", "IH") and (
+                var_name in valid_local_imports or
+                var_name in imported_modules or
+                var_name in self.symbol_table.modules
+            ):
                 continue
             filtered_base_errors.append(err)
 
-        # 4. Merge and deduplicate
+        # 5. Merge and deduplicate
         all_errors = filtered_base_errors + cross_file_errors
         seen = set()
         unique_errors = []
@@ -439,7 +797,6 @@ class MultiFileSDHDRunner:
                 file_path=rel_path
             )
 
-            # Annotate file path on hallucination records
             for issue in static_issues:
                 issue["file"] = rel_path
 

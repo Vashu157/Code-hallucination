@@ -107,16 +107,16 @@
       "category_name": "Logical Deviation Hallucination (LDH)",
       "gt_count": 2,
       "caught": {
-        "SDHD": 2,
-        "CodeHalu": 2,
+        "SDHD": 0,
+        "CodeHalu": 0,
         "SelfCheck": 0,
-        "SAC3": 2
+        "SAC3": 0
       },
       "recall": {
-        "SDHD": 1.0,
-        "CodeHalu": 1.0,
+        "SDHD": 0.0,
+        "CodeHalu": 0.0,
         "SelfCheck": 0.0,
-        "SAC3": 1.0
+        "SAC3": 0.0
       }
     },
     "LFH": {
@@ -124,16 +124,16 @@
       "category_name": "Logical Failure Hallucination (LFH)",
       "gt_count": 2,
       "caught": {
-        "SDHD": 2,
-        "CodeHalu": 2,
+        "SDHD": 0,
+        "CodeHalu": 0,
         "SelfCheck": 0,
-        "SAC3": 2
+        "SAC3": 1
       },
       "recall": {
-        "SDHD": 1.0,
-        "CodeHalu": 1.0,
+        "SDHD": 0.0,
+        "CodeHalu": 0.0,
         "SelfCheck": 0.0,
-        "SAC3": 1.0
+        "SAC3": 0.5
       }
     }
   },

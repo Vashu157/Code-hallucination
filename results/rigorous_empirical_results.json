@@ -1,0 +1,452 @@
+{
+  "MBPP": {
+    "SDHD": {
+      "metrics": {
+        "TP": 0,
+        "FP": 4,
+        "TN": 96,
+        "FN": 0,
+        "total": 100,
+        "Precision": 0.0,
+        "Recall": 0.0,
+        "F1": 0.0,
+        "Accuracy": 0.96,
+        "FPR": 0.04
+      },
+      "FPR": 0.04,
+      "Specificity": 0.96,
+      "FP": 4,
+      "TN": 96,
+      "total": 100
+    },
+    "SDHD-S": {
+      "metrics": {
+        "TP": 0,
+        "FP": 4,
+        "TN": 96,
+        "FN": 0,
+        "total": 100,
+        "Precision": 0.0,
+        "Recall": 0.0,
+        "F1": 0.0,
+        "Accuracy": 0.96,
+        "FPR": 0.04
+      },
+      "FPR": 0.04,
+      "Specificity": 0.96,
+      "FP": 4,
+      "TN": 96,
+      "total": 100
+    },
+    "SDHD-D": {
+      "metrics": {
+        "TP": 0,
+        "FP": 0,
+        "TN": 100,
+        "FN": 0,
+        "total": 100,
+        "Precision": 0.0,
+        "Recall": 0.0,
+        "F1": 0.0,
+        "Accuracy": 1.0,
+        "FPR": 0.0
+      },
+      "FPR": 0.0,
+      "Specificity": 1.0,
+      "FP": 0,
+      "TN": 100,
+      "total": 100
+    },
+    "CodeHalu": {
+      "metrics": {
+        "TP": 0,
+        "FP": 0,
+        "TN": 100,
+        "FN": 0,
+        "total": 100,
+        "Precision": 0.0,
+        "Recall": 0.0,
+        "F1": 0.0,
+        "Accuracy": 1.0,
+        "FPR": 0.0
+      },
+      "FPR": 0.0,
+      "Specificity": 1.0,
+      "FP": 0,
+      "TN": 100,
+      "total": 100
+    },
+    "SelfCheck": {
+      "metrics": {
+        "TP": 0,
+        "FP": 27,
+        "TN": 73,
+        "FN": 0,
+        "total": 100,
+        "Precision": 0.0,
+        "Recall": 0.0,
+        "F1": 0.0,
+        "Accuracy": 0.73,
+        "FPR": 0.27
+      },
+      "FPR": 0.27,
+      "Specificity": 0.73,
+      "FP": 27,
+      "TN": 73,
+      "total": 100
+    },
+    "SAC3": {
+      "metrics": {
+        "TP": 0,
+        "FP": 99,
+        "TN": 1,
+        "FN": 0,
+        "total": 100,
+        "Precision": 0.0,
+        "Recall": 0.0,
+        "F1": 0.0,
+        "Accuracy": 0.01,
+        "FPR": 0.99
+      },
+      "FPR": 0.99,
+      "Specificity": 0.01,
+      "FP": 99,
+      "TN": 1,
+      "total": 100
+    }
+  },
+  "CodeHaluEval": {
+    "SDHD": {
+      "metrics": {
+        "TP": 200,
+        "FP": 0,
+        "TN": 0,
+        "FN": 0,
+        "total": 200,
+        "Precision": 1.0,
+        "Recall": 1.0,
+        "F1": 1.0,
+        "Accuracy": 1.0,
+        "FPR": 0.0
+      }
+    },
+    "SDHD-S": {
+      "metrics": {
+        "TP": 56,
+        "FP": 0,
+        "TN": 0,
+        "FN": 144,
+        "total": 200,
+        "Precision": 1.0,
+        "Recall": 0.28,
+        "F1": 0.4375,
+        "Accuracy": 0.28,
+        "FPR": 0.0
+      }
+    },
+    "SDHD-D": {
+      "metrics": {
+        "TP": 200,
+        "FP": 0,
+        "TN": 0,
+        "FN": 0,
+        "total": 200,
+        "Precision": 1.0,
+        "Recall": 1.0,
+        "F1": 1.0,
+        "Accuracy": 1.0,
+        "FPR": 0.0
+      }
+    },
+    "CodeHalu": {
+      "metrics": {
+        "TP": 200,
+        "FP": 0,
+        "TN": 0,
+        "FN": 0,
+        "total": 200,
+        "Precision": 1.0,
+        "Recall": 1.0,
+        "F1": 1.0,
+        "Accuracy": 1.0,
+        "FPR": 0.0
+      }
+    },
+    "SelfCheck": {
+      "metrics": {
+        "TP": 158,
+        "FP": 0,
+        "TN": 0,
+        "FN": 42,
+        "total": 200,
+        "Precision": 1.0,
+        "Recall": 0.79,
+        "F1": 0.8827,
+        "Accuracy": 0.79,
+        "FPR": 0.0
+      }
+    },
+    "SAC3": {
+      "metrics": {
+        "TP": 175,
+        "FP": 0,
+        "TN": 0,
+        "FN": 25,
+        "total": 200,
+        "Precision": 1.0,
+        "Recall": 0.875,
+        "F1": 0.9333,
+        "Accuracy": 0.875,
+        "FPR": 0.0
+      }
+    }
+  },
+  "Category_TableVII": {
+    "DCH": {
+      "total": 25,
+      "recalls": {
+        "SDHD": 1.0,
+        "SDHD-S": 0.0,
+        "SDHD-D": 1.0,
+        "CodeHalu": 1.0,
+        "SelfCheck": 1.0,
+        "SAC3": 1.0
+      },
+      "caught": {
+        "SDHD": 25,
+        "SDHD-S": 0,
+        "SDHD-D": 25,
+        "CodeHalu": 25,
+        "SelfCheck": 25,
+        "SAC3": 25
+      }
+    },
+    "SAH": {
+      "total": 25,
+      "recalls": {
+        "SDHD": 1.0,
+        "SDHD-S": 0.8,
+        "SDHD-D": 1.0,
+        "CodeHalu": 1.0,
+        "SelfCheck": 0.76,
+        "SAC3": 1.0
+      },
+      "caught": {
+        "SDHD": 25,
+        "SDHD-S": 20,
+        "SDHD-D": 25,
+        "CodeHalu": 25,
+        "SelfCheck": 19,
+        "SAC3": 25
+      }
+    },
+    "IH": {
+      "total": 25,
+      "recalls": {
+        "SDHD": 1.0,
+        "SDHD-S": 0.0,
+        "SDHD-D": 1.0,
+        "CodeHalu": 1.0,
+        "SelfCheck": 1.0,
+        "SAC3": 1.0
+      },
+      "caught": {
+        "SDHD": 25,
+        "SDHD-S": 0,
+        "SDHD-D": 25,
+        "CodeHalu": 25,
+        "SelfCheck": 25,
+        "SAC3": 25
+      }
+    },
+    "ESH": {
+      "total": 25,
+      "recalls": {
+        "SDHD": 1.0,
+        "SDHD-S": 0.0,
+        "SDHD-D": 1.0,
+        "CodeHalu": 1.0,
+        "SelfCheck": 0.0,
+        "SAC3": 1.0
+      },
+      "caught": {
+        "SDHD": 25,
+        "SDHD-S": 0,
+        "SDHD-D": 25,
+        "CodeHalu": 25,
+        "SelfCheck": 0,
+        "SAC3": 25
+      }
+    },
+    "PCH": {
+      "total": 25,
+      "recalls": {
+        "SDHD": 1.0,
+        "SDHD-S": 0.44,
+        "SDHD-D": 1.0,
+        "CodeHalu": 1.0,
+        "SelfCheck": 0.56,
+        "SAC3": 1.0
+      },
+      "caught": {
+        "SDHD": 25,
+        "SDHD-S": 11,
+        "SDHD-D": 25,
+        "CodeHalu": 25,
+        "SelfCheck": 14,
+        "SAC3": 25
+      }
+    },
+    "CBH": {
+      "total": 25,
+      "recalls": {
+        "SDHD": 1.0,
+        "SDHD-S": 0.0,
+        "SDHD-D": 1.0,
+        "CodeHalu": 1.0,
+        "SelfCheck": 1.0,
+        "SAC3": 0.0
+      },
+      "caught": {
+        "SDHD": 25,
+        "SDHD-S": 0,
+        "SDHD-D": 25,
+        "CodeHalu": 25,
+        "SelfCheck": 25,
+        "SAC3": 0
+      }
+    },
+    "LDH": {
+      "total": 25,
+      "recalls": {
+        "SDHD": 1.0,
+        "SDHD-S": 0.0,
+        "SDHD-D": 1.0,
+        "CodeHalu": 1.0,
+        "SelfCheck": 1.0,
+        "SAC3": 1.0
+      },
+      "caught": {
+        "SDHD": 25,
+        "SDHD-S": 0,
+        "SDHD-D": 25,
+        "CodeHalu": 25,
+        "SelfCheck": 25,
+        "SAC3": 25
+      }
+    },
+    "LFH": {
+      "total": 25,
+      "recalls": {
+        "SDHD": 1.0,
+        "SDHD-S": 1.0,
+        "SDHD-D": 1.0,
+        "CodeHalu": 1.0,
+        "SelfCheck": 1.0,
+        "SAC3": 1.0
+      },
+      "caught": {
+        "SDHD": 25,
+        "SDHD-S": 25,
+        "SDHD-D": 25,
+        "CodeHalu": 25,
+        "SelfCheck": 25,
+        "SAC3": 25
+      }
+    }
+  },
+  "Combined": {
+    "SDHD": {
+      "metrics": {
+        "TP": 200,
+        "FP": 4,
+        "TN": 96,
+        "FN": 0,
+        "total": 300,
+        "Precision": 0.9804,
+        "Recall": 1.0,
+        "F1": 0.9901,
+        "Accuracy": 0.9867,
+        "FPR": 0.04
+      }
+    },
+    "SDHD-S": {
+      "metrics": {
+        "TP": 56,
+        "FP": 4,
+        "TN": 96,
+        "FN": 144,
+        "total": 300,
+        "Precision": 0.9333,
+        "Recall": 0.28,
+        "F1": 0.4308,
+        "Accuracy": 0.5067,
+        "FPR": 0.04
+      }
+    },
+    "SDHD-D": {
+      "metrics": {
+        "TP": 200,
+        "FP": 0,
+        "TN": 100,
+        "FN": 0,
+        "total": 300,
+        "Precision": 1.0,
+        "Recall": 1.0,
+        "F1": 1.0,
+        "Accuracy": 1.0,
+        "FPR": 0.0
+      }
+    },
+    "CodeHalu": {
+      "metrics": {
+        "TP": 200,
+        "FP": 0,
+        "TN": 100,
+        "FN": 0,
+        "total": 300,
+        "Precision": 1.0,
+        "Recall": 1.0,
+        "F1": 1.0,
+        "Accuracy": 1.0,
+        "FPR": 0.0
+      }
+    },
+    "SelfCheck": {
+      "metrics": {
+        "TP": 158,
+        "FP": 27,
+        "TN": 73,
+        "FN": 42,
+        "total": 300,
+        "Precision": 0.8541,
+        "Recall": 0.79,
+        "F1": 0.8208,
+        "Accuracy": 0.77,
+        "FPR": 0.27
+      }
+    },
+    "SAC3": {
+      "metrics": {
+        "TP": 175,
+        "FP": 99,
+        "TN": 1,
+        "FN": 25,
+        "total": 300,
+        "Precision": 0.6387,
+        "Recall": 0.875,
+        "F1": 0.7384,
+        "Accuracy": 0.5867,
+        "FPR": 0.99
+      }
+    }
+  },
+  "Representation_TableVI": {
+    "AST_only": 19,
+    "AST_CFG": 0,
+    "Full_SSA": 20,
+    "total": 60
+  },
+  "elapsed_seconds": 696.85,
+  "timestamp": "2026-10-06T13:18:48Z"
+}

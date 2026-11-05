@@ -1,0 +1,95 @@
+{
+  "N < 3 (C_min=2)": {
+    "c_min": 2,
+    "metrics": {
+      "TP": 0,
+      "FP": 0,
+      "TN": 11,
+      "FN": 4,
+      "total": 15,
+      "Precision": 0.0,
+      "Recall": 0.0,
+      "F1": 0.0,
+      "Accuracy": 0.7333,
+      "FPR": 0.0,
+      "FPR_CI95": [
+        0.0,
+        0.2588
+      ],
+      "Accuracy_CI95": [
+        0.4805,
+        0.891
+      ],
+      "Recall_CI95": [
+        0.0,
+        0.4899
+      ],
+      "Precision_CI95": [
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "3 <= N < 10 (C_min=5)": {
+    "c_min": 5,
+    "metrics": {
+      "TP": 0,
+      "FP": 0,
+      "TN": 11,
+      "FN": 4,
+      "total": 15,
+      "Precision": 0.0,
+      "Recall": 0.0,
+      "F1": 0.0,
+      "Accuracy": 0.7333,
+      "FPR": 0.0,
+      "FPR_CI95": [
+        0.0,
+        0.2588
+      ],
+      "Accuracy_CI95": [
+        0.4805,
+        0.891
+      ],
+      "Recall_CI95": [
+        0.0,
+        0.4899
+      ],
+      "Precision_CI95": [
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "10 <= N <= 15 (C_min=10)": {
+    "c_min": 10,
+    "metrics": {
+      "TP": 0,
+      "FP": 0,
+      "TN": 11,
+      "FN": 4,
+      "total": 15,
+      "Precision": 0.0,
+      "Recall": 0.0,
+      "F1": 0.0,
+      "Accuracy": 0.7333,
+      "FPR": 0.0,
+      "FPR_CI95": [
+        0.0,
+        0.2588
+      ],
+      "Accuracy_CI95": [
+        0.4805,
+        0.891
+      ],
+      "Recall_CI95": [
+        0.0,
+        0.4899
+      ],
+      "Precision_CI95": [
+        0.0,
+        0.0
+      ]
+    }
+  }
+}

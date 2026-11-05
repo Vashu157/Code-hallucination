@@ -173,14 +173,14 @@ class TestPhase7RQ1(unittest.TestCase):
         benchmark_report = self.evaluator.run_full_benchmark(self.mock_dataset)
         md_text = self.evaluator.generate_table3_markdown(benchmark_report)
 
-        self.assertIn("# Table III: Hallucination Detection Performance", md_text)
-        self.assertIn("| Dataset | Method | Precision | Recall | F1 Score | Accuracy | FPR |", md_text)
+        self.assertIn("# Table III: Hallucination Detection Result", md_text)
+        self.assertIn("| Dataset | Method | Precision", md_text)
         self.assertIn("SDHD", md_text)
         self.assertIn("Baseline1", md_text)
         self.assertIn("Statistical Significance", md_text)
 
     def test_table4_clean_code_fpr(self):
-        """Validates Table IV clean code False Positive Rate evaluation."""
+        """Validates clean code False Positive Rate diagnostic evaluation."""
         mbpp_pool = self.mock_dataset["MBPP"]
         clean_res = self.evaluator.evaluate_table4_clean_fpr(mbpp_pool)
 
@@ -196,8 +196,8 @@ class TestPhase7RQ1(unittest.TestCase):
 
         # Markdown formatting
         md_table4 = self.evaluator.generate_table4_markdown(clean_res)
-        self.assertIn("# Table IV: Clean-Code False Positive Rate", md_table4)
-        self.assertIn("| Method | Clean Tasks | False Positives (FP) | True Negatives (TN) | FPR (%) | Specificity (%) |", md_table4)
+        self.assertIn("Clean-Code Specificity Diagnostic", md_table4)
+        self.assertIn("| Method | Clean Tasks | False Positives (FP) | True Negatives (TN) | FPR (%) |", md_table4)
         self.assertIn("SDHD", md_table4)
 
     def test_table7_category_breakdown(self):

@@ -13,7 +13,7 @@ import os
 import sys
 from typing import Optional
 
-from sdhd_pipeline import SDHD_Pipeline
+from sdhd_pipeline import SDHD_Pipeline, ALL_TAXONOMY_CODES
 from cross_file_analyzer import MultiFileSDHDRunner, CrossFileStaticDetector, ProjectSymbolTable
 from evaluate_rq1 import run_rq1_pipeline
 from ablation import run_rq2_pipeline
@@ -162,20 +162,33 @@ def main():
         source_code = args.code
 
     print("\n[SDHD CLI] Analyzing code snippet...")
-    pipeline = SDHD_Pipeline(
-        timeout=args.timeout,
-        c_min=args.c_min,
-        i_max=args.i_max
-    )
-
-    def _default_gen(r, c, f, cnt):
-        return []
-
-    report = pipeline.run(
-        user_prompt=args.prompt,
-        generated_code=source_code,
-        test_gen_fn=_default_gen if args.static_only else None
-    )
+    if args.static_only:
+        detector = CrossFileStaticDetector()
+        issues = detector.analyze_source(source_code)
+        status = "POTENTIAL_HALLUCINATION" if issues else "PASS"
+        type_counts = {code: 0 for code in ALL_TAXONOMY_CODES}
+        for h in issues:
+            tc = h.get("type_code")
+            if tc in type_counts:
+                type_counts[tc] += 1
+        report = {
+            "summary": {
+                "overall_status": status,
+                "total_hallucinations": len(issues),
+                "breakdown_by_type": type_counts
+            },
+            "hallucinations": issues
+        }
+    else:
+        pipeline = SDHD_Pipeline(
+            timeout=args.timeout,
+            c_min=args.c_min,
+            i_max=args.i_max
+        )
+        report = pipeline.run(
+            user_prompt=args.prompt,
+            generated_code=source_code
+        )
 
     status = report["summary"]["overall_status"]
     total = report["summary"]["total_hallucinations"]
