@@ -1,0 +1,123 @@
+# =====================================================================
+# .gitignore - SDHD (Static-Dynamic Hallucination Detection) Project
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# 1. Datasets, Benchmarks & Large Data Files
+# ---------------------------------------------------------------------
+# Ignore all downloaded data directories, raw files, and caches under data/
+data/*
+# Preserve lightweight bundled sample fixtures for unit testing
+!data/codehalueval_samples.json
+!data/hallucode_samples.json
+!data/mbpp_clean.json
+!data/.gitkeep
+
+# Large data formats anywhere in the repo
+*.parquet
+*.arrow
+*.feather
+*.sqlite
+*.sqlite3
+*.db
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.npy
+*.npz
+*.jsonl
+
+# ---------------------------------------------------------------------
+# 2. Archives & Compressed Bundles
+# ---------------------------------------------------------------------
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.gz
+*.7z
+*.rar
+*.bz2
+*.xz
+
+# ---------------------------------------------------------------------
+# 3. Model Weights, Checkpoints & Embeddings
+# ---------------------------------------------------------------------
+*.pt
+*.pth
+*.bin
+*.onnx
+*.safetensors
+*.ckpt
+models/
+weights/
+checkpoints/
+
+# ---------------------------------------------------------------------
+# 4. Logs, Execution Outputs & Temporary Dumps
+# ---------------------------------------------------------------------
+*.log
+output.txt
+*.out
+benchmark_report.json
+tmp/
+temp/
+*.tmp
+*.bak
+
+# ---------------------------------------------------------------------
+# 5. PDFs & Large Binary Documents
+# ---------------------------------------------------------------------
+*.pdf
+
+# ---------------------------------------------------------------------
+# 6. Python Cache & Build Artifacts
+# ---------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.ruff_cache/
+
+# ---------------------------------------------------------------------
+# 7. Virtual Environments & Secrets
+# ---------------------------------------------------------------------
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables & API keys
+.env
+.env.local
+.env.*
+*.pem
+*.key
+
+# ---------------------------------------------------------------------
+# 8. IDE & Operating System Metadata
+# ---------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
