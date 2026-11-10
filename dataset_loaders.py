@@ -307,6 +307,64 @@ def load_hallucode(n: Optional[int] = None) -> List[DatasetRecord]:
 
 
 # =====================================================================
+# 4. EvalPlus Loader (Empirical Ground-Truth from Real Pre-Generated LLM Code)
+# =====================================================================
+
+def load_evalplus(
+    dataset: str = "humaneval",
+    model: str = "chatgpt",
+    n: Optional[int] = None,
+    clean_only: bool = False,
+    hallucinated_only: bool = False,
+    auto_fetch: bool = True
+) -> List[DatasetRecord]:
+    """
+    Loads empirical benchmark records from EvalPlus pre-generated LLM completions.
+    Pass/fail ground-truth is established directly by EvalPlus's execution engine
+    against base+plus oracle test suites.
+
+    Args:
+        dataset: "humaneval" or "mbpp".
+        model: Model alias (e.g. "chatgpt", "starcoder", "gpt-3.5-turbo", "gpt-4").
+        n: Maximum number of records to return.
+        clean_only: Return only non-hallucinated (passed all tests) records.
+        hallucinated_only: Return only hallucinated (failed tests) records.
+        auto_fetch: If True and records JSON does not exist, downloads and evaluates via evalplus_fetcher.
+
+    Returns:
+        List of DatasetRecord instances.
+    """
+    norm_ds = "mbpp" if "mbpp" in dataset.lower() else "humaneval"
+    evalplus_dir = os.path.join(DATA_DIR, "evalplus")
+    os.makedirs(evalplus_dir, exist_ok=True)
+    records_file = os.path.join(evalplus_dir, f"{norm_ds}_{model}_records.json")
+
+    records: List[DatasetRecord] = []
+    if os.path.exists(records_file):
+        from evalplus_fetcher import load_dataset_records_from_file
+        records = load_dataset_records_from_file(records_file)
+    elif auto_fetch:
+        from evalplus_fetcher import fetch_and_evaluate_evalplus
+        records = fetch_and_evaluate_evalplus(
+            dataset=norm_ds,
+            model=model,
+            limit=n,
+            save_path=records_file,
+            verbose=False
+        )
+
+    if clean_only:
+        records = [r for r in records if not r.is_hallucinated]
+    elif hallucinated_only:
+        records = [r for r in records if r.is_hallucinated]
+
+    if n is not None:
+        records = records[:max(0, n)]
+
+    return records
+
+
+# =====================================================================
 # Unified Benchmark Loader API
 # =====================================================================
 
